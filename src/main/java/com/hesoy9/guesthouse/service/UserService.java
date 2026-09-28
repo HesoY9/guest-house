@@ -50,8 +50,4 @@ public class UserService {
     public List<User> getUsersByRole(Role role) {
         return userRepository.findByRole(role);
     }
-
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
-    }
 }

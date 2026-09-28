@@ -30,8 +30,4 @@ public class GuestService {
     public List<Reservation> getGuestHistory(Long guestId) { // FR12
         return reservationRepository.findByGuestId(guestId);
     }
-    
-    public List<Guest> getAllGuests() {
-    return guestRepository.findAll();
-    }
 }

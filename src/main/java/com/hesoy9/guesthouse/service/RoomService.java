@@ -49,9 +49,4 @@ public class RoomService {
         room.setStatus(status);
         return roomRepository.save(room);
     }
-    
-    public Room getRoomById(Long roomId) {
-    return roomRepository.findById(roomId)
-            .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
-}
 }

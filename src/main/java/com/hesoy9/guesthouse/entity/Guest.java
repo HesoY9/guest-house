@@ -13,7 +13,7 @@ public class Guest {
 
     @NotBlank(message = "ID/Passport is required")
     @Column(name = "id_or_passport", nullable = false, unique = true, length = 30)
-    private String idOrPassport;
+    private String idOPassport;
 
     @NotBlank(message = "Name is required")
     @Column(nullable = false, length = 100)
@@ -27,16 +27,22 @@ public class Guest {
         // required by JPA
     }
 
+    public Guest(String idOPassport, String name, String contactNumber) {
+        this.idOPassport = idOPassport;
+        this.name = name;
+        this.contactNumber = contactNumber;
+    }
+
     public Long getId() {
         return id;
     }
 
-    public String getIdOrPassport() {
-        return idOrPassport;
+    public String getIdOPassport() {
+        return idOPassport;
     }
 
-    public void setIdOrPassport(String idOrPassport) {
-        this.idOrPassport = idOrPassport;
+    public void setIdOPassport(String idOPassport) {
+        this.idOPassport = idOPassport;
     }
 
     public String getName() {
