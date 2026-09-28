@@ -1,0 +1,24 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="panel" id="users-panel">
+    <p th:if="${successMessage}" class="feedback success" th:text="${successMessage}"></p>
+    <p th:if="${errorMessage}" class="feedback error" th:text="${errorMessage}"></p>
+
+    <table>
+        <thead>
+        <tr><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="user : ${users}">
+            <td th:text="${user.username}"></td>
+            <td th:text="${user.role}"></td>
+            <td th:text="${user.enabled ? 'Active' : 'Disabled'}"></td>
+            <td>
+                <button type="button"
+                        th:if="${user.enabled}"
+                        th:hx-put="@{/web/users/{id}/disable(id=${user.id})}"
+                        hx-target="#users-panel" hx-swap="outerHTML"
+                        hx-confirm="Disable this account?">Disable</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>

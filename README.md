@@ -64,7 +64,7 @@ git branch -d add-payment-logic
 #### Entity types for major classes:
 ```text
 User        =   id, username, passwordHash, role (enum: ADMIN, RECEPTIONIST, HOUSEKEEPING, MANAGER)   
-Guest       =   id, idOrPassport, name, contact, numberOfGuests 
+Guest       =   id, , name, contact, numberOfGuests 
 Room        =   id, roomNumber, type, price, status (enum: AVAILABLE, RESERVED, OCCUPIED, CLEANING_REQUIRED)   
 Reservation =   id, guest (FK), room (FK), checkInDate, checkOutDate, status (ACTIVE/CANCELLED/COMPLETED)   
 Invoice     =   id, reservation (FK), totalAmount, generatedDate

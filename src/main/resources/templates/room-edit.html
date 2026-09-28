@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Room - Guest House</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<main class="container">
+    <h1>Edit Room</h1>
+
+    <form th:action="@{/web/rooms/{id}/edit(id=${room.id})}" method="post">
+        <label>Room number
+            <input type="text" name="roomNumber" th:value="${room.roomNumber}" required>
+        </label>
+        <label>Type
+            <select name="type" required>
+                <option value="Single" th:selected="${room.type == 'Single'}">Single</option>
+                <option value="Double" th:selected="${room.type == 'Double'}">Double</option>
+                <option value="Suite" th:selected="${room.type == 'Suite'}">Suite</option>
+            </select>
+        </label>
+        <label>Price per night
+            <input type="number" step="0.01" name="price" th:value="${room.price}" required>
+        </label>
+        <label>Status
+            <select name="status" required>
+                <option value="AVAILABLE" th:selected="${room.status.name() == 'AVAILABLE'}">Available</option>
+                <option value="RESERVED" th:selected="${room.status.name() == 'RESERVED'}">Reserved</option>
+                <option value="OCCUPIED" th:selected="${room.status.name() == 'OCCUPIED'}">Occupied</option>
+                <option value="CLEANING_REQUIRED" th:selected="${room.status.name() == 'CLEANING_REQUIRED'}">Cleaning Required</option>
+            </select>
+        </label>
+        <button type="submit">Save Changes</button>
+        <a th:href="@{/web/rooms}" class="link-button">Cancel</a>
+    </form>
+</main>
+</body>
+</html>

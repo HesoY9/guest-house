@@ -34,8 +34,30 @@ public class Reservation {
     @Column(nullable = false, length = 20)
     private ReservationStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "booking_channel", nullable = false, length = 20)
+    private BookingChannel bookingChannel;
+
+    public BookingChannel getBookingChannel() {
+        return bookingChannel;
+    }
+
+    public void setBookingChannel(BookingChannel bookingChannel) {
+        this.bookingChannel = bookingChannel;
+    }
+
     public Reservation() {
         // required by JPA
+    }
+
+    public Reservation(Guest guest, Room room, LocalDate checkInDate, LocalDate checkOutDate, Integer numberOfGuests, ReservationStatus status, BookingChannel bookingChannel) {
+        this.guest = guest;
+        this.room = room;
+        this.checkInDate = checkInDate;
+        this.checkOutDate = checkOutDate;
+        this.numberOfGuests = numberOfGuests;
+        this.status = status;
+        this.bookingChannel = bookingChannel;
     }
 
     public Long getId() {
