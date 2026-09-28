@@ -28,6 +28,13 @@ public class User {
         // required by JPA
     }
 
+    public User(String username, String passwordHash, Role role, Boolean enabled) {
+        this.username = username;
+        this.passwordHash = passwordHash;
+        this.role = role;
+        this.enabled = enabled;
+    }
+
     public Long getId() {
         return id;
     }

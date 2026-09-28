@@ -27,6 +27,13 @@ public class Room {
         // required by JPA
     }
 
+    public Room(String roomNumber, String type, Double price, RoomStatus status) {
+        this.roomNumber = roomNumber;
+        this.type = type;
+        this.price = price;
+        this.status = status;
+    }
+
     public Long getId() {
         return id;
     }
