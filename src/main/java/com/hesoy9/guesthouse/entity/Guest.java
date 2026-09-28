@@ -1,6 +1,7 @@
 package com.hesoy9.guesthouse.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 
 @Entity
 @Table(name = "guests")
@@ -10,12 +11,15 @@ public class Guest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "ID/Passport is required")
     @Column(name = "id_or_passport", nullable = false, unique = true, length = 30)
     private String idOPassport;
 
+    @NotBlank(message = "Name is required")
     @Column(nullable = false, length = 100)
     private String name;
 
+    @NotBlank(message = "Contact number is required")
     @Column(name = "contact_number", nullable = false, length = 20)
     private String contactNumber;
 

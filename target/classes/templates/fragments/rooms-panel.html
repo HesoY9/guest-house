@@ -1,0 +1,25 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="panel" id="rooms-panel">
+    <p th:if="${successMessage}" class="feedback success" th:text="${successMessage}"></p>
+    <p th:if="${errorMessage}" class="feedback error" th:text="${errorMessage}"></p>
+
+    <table>
+        <thead>
+        <tr><th>Room #</th><th>Type</th><th>Price</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="room : ${rooms}">
+            <td th:text="${room.roomNumber}"></td>
+            <td th:text="${room.type}"></td>
+            <td th:text="${room.price}"></td>
+            <td th:text="${room.status}"></td>
+            <td>
+                <a th:href="@{/web/rooms/{id}/edit(id=${room.id})}">Edit</a>
+                <button type="button"
+                        th:hx-delete="@{/web/rooms/{id}(id=${room.id})}"
+                        hx-target="#rooms-panel" hx-swap="outerHTML"
+                        hx-confirm="Delete this room?">Delete</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>

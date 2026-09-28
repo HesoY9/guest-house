@@ -1,0 +1,14 @@
+<nav xmlns:th="http://www.thymeleaf.org" th:fragment="nav" class="navbar">
+    <span class="navbar-brand">Guest House Manager</span>
+    <a th:href="@{/web/rooms}">Rooms</a>
+    <a th:href="@{/web/guests}">Guests</a>
+    <a th:href="@{/web/reservations}">Reservations</a>
+    <a th:if="${session.role != null and session.role.name().equals('ADMIN')}" th:href="@{/web/users}">Users</a>
+    <span class="navbar-right">
+        <span th:if="${session.loggedInUser != null}" th:text="'Hi, ' + ${session.loggedInUser}"></span>
+        <form th:if="${session.loggedInUser != null}" th:action="@{/web/logout}" method="post" style="display:inline">
+            <button type="submit" class="link-button">Logout</button>
+        </form>
+        <a th:unless="${session.loggedInUser != null}" th:href="@{/web/login}">Login</a>
+    </span>
+</nav>

@@ -1,0 +1,17 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="panel" id="guests-panel">
+    <p th:if="${successMessage}" class="feedback success" th:text="${successMessage}"></p>
+    <p th:if="${errorMessage}" class="feedback error" th:text="${errorMessage}"></p>
+
+    <table>
+        <thead>
+        <tr><th>ID/Passport</th><th>Name</th><th>Contact</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="guest : ${guests}">
+            <td th:text="${guest.idOrPassport}"></td>
+            <td th:text="${guest.name}"></td>
+            <td th:text="${guest.contactNumber}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>

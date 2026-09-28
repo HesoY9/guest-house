@@ -1,0 +1,33 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="panel" id="reservations-panel">
+    <p th:if="${successMessage}" class="feedback success" th:text="${successMessage}"></p>
+    <p th:if="${errorMessage}" class="feedback error" th:text="${errorMessage}"></p>
+
+    <table>
+        <thead>
+        <tr><th>#</th><th>Guest</th><th>Room</th><th>Check-in</th><th>Check-out</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="reservation : ${reservations}">
+            <td th:text="${reservation.id}"></td>
+            <td th:text="${reservation.guest.name}"></td>
+            <td th:text="${reservation.room.roomNumber}"></td>
+            <td th:text="${reservation.checkInDate}"></td>
+            <td th:text="${reservation.checkOutDate}"></td>
+            <td th:text="${reservation.status}"></td>
+            <td>
+                <button type="button"
+                        th:hx-put="@{/web/reservations/{id}/checkin(id=${reservation.id})}"
+                        hx-target="#reservations-panel" hx-swap="outerHTML">Check-in</button>
+                <button type="button"
+                        th:hx-put="@{/web/reservations/{id}/checkout(id=${reservation.id})}"
+                        hx-target="#reservations-panel" hx-swap="outerHTML"
+                        hx-confirm="Check out this guest?">Check-out</button>
+                <button type="button"
+                        th:hx-put="@{/web/reservations/{id}/cancel(id=${reservation.id})}"
+                        hx-target="#reservations-panel" hx-swap="outerHTML"
+                        hx-confirm="Cancel this reservation?">Cancel</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>

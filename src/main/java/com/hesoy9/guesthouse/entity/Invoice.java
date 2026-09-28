@@ -26,6 +26,12 @@ public class Invoice {
         // required by JPA
     }
 
+    public Invoice(Reservation reservation, Double totalAmount, LocalDate generatedDate) {
+        this.reservation = reservation;
+        this.totalAmount = totalAmount;
+        this.generatedDate = generatedDate;
+    }
+
     public Long getId() {
         return id;
     }

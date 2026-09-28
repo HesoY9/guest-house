@@ -29,6 +29,13 @@ public class Payment {
         // required by JPA
     }
 
+    public Payment(Invoice invoice, Double amount, PaymentMethod method, LocalDate paymentDate) {
+        this.invoice = invoice;
+        this.amount = amount;
+        this.method = method;
+        this.paymentDate = paymentDate;
+    }
+
     public Long getId() {
         return id;
     }
