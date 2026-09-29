@@ -1,0 +1,15 @@
+<nav xmlns:th="http://www.thymeleaf.org" th:fragment="nav" class="site-navbar">
+    <a th:href="@{/}" class="site-brand">Hesoy9 Guest House</a>
+    <span class="site-nav-right">
+        <th:block th:if="${googleUserName != null}">
+            <a th:href="@{/my-bookings}">My Bookings</a>
+            <span th:text="'Hi, ' + ${googleUserName}"></span>
+            <form th:action="@{/logout}" method="post" style="display:inline">
+                <button type="submit" class="link-button">Sign out</button>
+            </form>
+        </th:block>
+        <a th:if="${googleUserName == null}" th:href="@{/oauth2/authorization/google}" class="btn-google">
+            Sign in with Google
+        </a>
+    </span>
+</nav>

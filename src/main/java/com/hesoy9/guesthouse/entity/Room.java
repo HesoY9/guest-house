@@ -31,6 +31,14 @@ public class Room {
     @Column(nullable = false, length = 20)
     private RoomStatus status;
 
+    // Marketing content for the public guest site - optional, no validation, edit anytime.
+    @Column(length = 1000)
+    private String description;
+
+    // A filename under /static/images/ (e.g. "room-101.jpg"), or a full URL - your choice.
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
+
     public Room() {
         // required by JPA
     }
@@ -69,5 +77,21 @@ public class Room {
 
     public void setStatus(RoomStatus status) {
         this.status = status;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

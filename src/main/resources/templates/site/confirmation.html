@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Booking Confirmed - Hesoy9 Guest House</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+<div th:replace="~{site/fragments/site-nav :: nav}"></div>
+
+<main class="container confirmation-page">
+    <h1>Booking Confirmed</h1>
+    <p>Thanks - your reservation is booked. Bring ID at check-in.</p>
+
+    <table>
+        <tr><th>Reservation #</th><td th:text="${reservation.id}"></td></tr>
+        <tr><th>Room</th><td th:text="${reservation.room.roomNumber}"></td></tr>
+        <tr><th>Check-in</th><td th:text="${reservation.checkInDate}"></td></tr>
+        <tr><th>Check-out</th><td th:text="${reservation.checkOutDate}"></td></tr>
+        <tr><th>Status</th><td th:text="${reservation.status}"></td></tr>
+    </table>
+
+    <a th:href="@{/my-bookings}" class="btn-book">View My Bookings</a>
+</main>
+</body>
+</html>
