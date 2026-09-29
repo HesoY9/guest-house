@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Book a Room - Hesoy9 Guest House</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+<div th:replace="~{site/fragments/site-nav :: nav}"></div>
+
+<main class="container booking-page">
+    <div class="room-summary">
+        <img th:if="${room.imageUrl != null}"
+             th:src="${room.imageUrl.startsWith('http')} ? ${room.imageUrl} : @{'/images/' + ${room.imageUrl}}"
+             alt="" class="room-summary-image">
+        <h1 th:text="${room.type} + ' - Room ' + ${room.roomNumber}"></h1>
+        <p th:text="${room.description} ?: 'A comfortable room at our guest house.'"></p>
+        <p class="room-card-price"><strong th:text="'$' + ${room.price}"></strong> / night</p>
+    </div>
+
+    <form class="booking-form" th:action="@{/book/{id}(id=${room.id})}" method="post">
+        <p th:if="${errorMessage}" class="feedback error" th:text="${errorMessage}"></p>
+
+        <label>Check-in
+            <input type="date" name="checkInDate" required>
+        </label>
+        <label>Check-out
+            <input type="date" name="checkOutDate" required>
+        </label>
+        <label>Number of guests
+            <input type="number" name="numberOfGuests" min="1" required>
+        </label>
+        <label>Contact number
+            <input type="text" name="contactNumber" th:value="${guest.contactNumber}" required>
+        </label>
+        <button type="submit">Confirm Booking</button>
+    </form>
+</main>
+</body>
+</html>

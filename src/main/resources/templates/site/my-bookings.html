@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>My Bookings - Hesoy9 Guest House</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+<div th:replace="~{site/fragments/site-nav :: nav}"></div>
+
+<main class="container">
+    <h1>My Bookings</h1>
+
+    <p th:if="${#lists.isEmpty(reservations)}">You haven't made any bookings yet.</p>
+
+    <table th:unless="${#lists.isEmpty(reservations)}">
+        <thead>
+        <tr><th>Room</th><th>Check-in</th><th>Check-out</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="reservation : ${reservations}">
+            <td th:text="${reservation.room.roomNumber}"></td>
+            <td th:text="${reservation.checkInDate}"></td>
+            <td th:text="${reservation.checkOutDate}"></td>
+            <td th:text="${reservation.status}"></td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>
