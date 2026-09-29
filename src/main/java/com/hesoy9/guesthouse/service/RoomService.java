@@ -5,6 +5,7 @@ import com.hesoy9.guesthouse.entity.RoomStatus;
 import com.hesoy9.guesthouse.repository.RoomRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -27,7 +28,14 @@ public class RoomService {
         room.setType(updatedDetails.getType());
         room.setPrice(updatedDetails.getPrice());
         room.setStatus(updatedDetails.getStatus());
+        room.setDescription(updatedDetails.getDescription());
+        room.setImageUrl(updatedDetails.getImageUrl());
         return roomRepository.save(room);
+    }
+
+    public Room getRoomById(Long roomId) {
+        return roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
     }
 
     public void removeRoom(Long roomId) { // FR3
@@ -42,6 +50,11 @@ public class RoomService {
         return roomRepository.findByStatus(RoomStatus.AVAILABLE);
     }
 
+    // Public site search - date-aware, unlike getAvailableRooms() above.
+    public List<Room> getAvailableRoomsForDates(LocalDate checkIn, LocalDate checkOut) {
+        return roomRepository.findAvailableRoomsForDateRange(checkIn, checkOut);
+    }
+
     // Shared by check-in/out (FR15, FR18) and housekeeping (FR24, FR25)
     public Room updateStatus(Long roomId, RoomStatus status) {
         Room room = roomRepository.findById(roomId)
@@ -49,9 +62,4 @@ public class RoomService {
         room.setStatus(status);
         return roomRepository.save(room);
     }
-    
-    public Room getRoomById(Long roomId) {
-    return roomRepository.findById(roomId)
-            .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
-}
 }

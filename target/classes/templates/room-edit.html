@@ -33,6 +33,12 @@
                 <option value="CLEANING_REQUIRED" th:selected="${room.status.name() == 'CLEANING_REQUIRED'}">Cleaning Required</option>
             </select>
         </label>
+        <label>Description (shown on the public site)
+            <textarea name="description" rows="3" th:text="${room.description}"></textarea>
+        </label>
+        <label>Image filename or URL
+            <input type="text" name="imageUrl" th:value="${room.imageUrl}">
+        </label>
         <button type="submit">Save Changes</button>
         <a th:href="@{/web/rooms}" class="link-button">Cancel</a>
     </form>
