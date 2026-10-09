@@ -1,0 +1,61 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="section" id="reservations-section">
+
+    <form th:hx-post="@{/web/reservations}" hx-target="#reservations-section" hx-swap="outerHTML" class="inline-form">
+        <select name="guestId">
+            <option value="" selected>+ New guest (fill in below)</option>
+            <option th:each="guest : ${guests}" th:value="${guest.id}" th:text="${guest.name}"></option>
+        </select>
+        <select name="roomId" required>
+            <option value="" disabled selected>Room</option>
+            <option th:each="room : ${rooms}" th:value="${room.id}" th:text="${room.roomNumber}"></option>
+        </select>
+        <input type="date" name="checkInDate" required>
+        <input type="date" name="checkOutDate" required>
+        <input type="number" name="numberOfGuests" min="1" placeholder="Guests" required>
+        <select name="bookingChannel" required>
+            <option value="ONLINE_PORTAL">Online</option>
+            <option value="IN_PERSON">In Person</option>
+            <option value="PHONE">Phone</option>
+        </select>
+        <button type="submit">Register &amp; Book</button>
+        <br>
+        <small style="flex-basis: 100%; color: #666;">
+            New guest? Leave "+ New guest" selected above and fill in at least a name below. Already registered? Pick their name above instead and leave these blank.
+        </small>
+        <input type="text" name="newGuestIdOrPassport" placeholder="New guest: ID/Passport (optional)">
+        <input type="text" name="newGuestName" placeholder="New guest: Full name">
+        <input type="text" name="newGuestContactNumber" placeholder="New guest: Contact number (optional)">
+    </form>
+
+    <p th:if="${successMessage}" class="feedback success" th:text="${successMessage}"></p>
+    <p th:if="${errorMessage}" class="feedback error" th:text="${errorMessage}"></p>
+
+    <table>
+        <thead>
+        <tr><th>#</th><th>Guest</th><th>Room</th><th>Check-in</th><th>Check-out</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="reservation : ${reservations}">
+            <td th:text="${reservation.id}"></td>
+            <td th:text="${reservation.guest.name}"></td>
+            <td th:text="${reservation.room.roomNumber}"></td>
+            <td th:text="${reservation.checkInDate}"></td>
+            <td th:text="${reservation.checkOutDate}"></td>
+            <td th:text="${reservation.status}"></td>
+            <td>
+                <button type="button"
+                        th:hx-put="@{/web/reservations/{id}/checkin(id=${reservation.id})}"
+                        hx-target="#reservations-section" hx-swap="outerHTML">Check-in</button>
+                <button type="button"
+                        th:hx-put="@{/web/reservations/{id}/checkout(id=${reservation.id})}"
+                        hx-target="#reservations-section" hx-swap="outerHTML"
+                        hx-confirm="Check out this guest?">Check-out</button>
+                <button type="button"
+                        th:hx-put="@{/web/reservations/{id}/cancel(id=${reservation.id})}"
+                        hx-target="#reservations-section" hx-swap="outerHTML"
+                        hx-confirm="Cancel this reservation?">Cancel</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>

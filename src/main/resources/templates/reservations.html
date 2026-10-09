@@ -12,27 +12,7 @@
 <main class="container">
     <h1>Reservations</h1>
 
-    <form th:hx-post="@{/web/reservations}" hx-target="#reservations-panel" hx-swap="outerHTML" class="inline-form">
-        <select name="guestId" required>
-            <option value="" disabled selected>Guest</option>
-            <option th:each="guest : ${guests}" th:value="${guest.id}" th:text="${guest.name}"></option>
-        </select>
-        <select name="roomId" required>
-            <option value="" disabled selected>Room</option>
-            <option th:each="room : ${rooms}" th:value="${room.id}" th:text="${room.roomNumber}"></option>
-        </select>
-        <input type="date" name="checkInDate" required>
-        <input type="date" name="checkOutDate" required>
-        <input type="number" name="numberOfGuests" min="1" placeholder="Guests" required>
-        <select name="bookingChannel" required>
-            <option value="ONLINE_PORTAL">Online</option>
-            <option value="IN_PERSON">In Person</option>
-            <option value="PHONE">Phone</option>
-        </select>
-        <button type="submit">Book</button>
-    </form>
-
-    <div th:replace="~{fragments/reservations-panel :: panel}"></div>
+    <div th:replace="~{fragments/reservations-section :: section}"></div>
 </main>
 </body>
 </html>
