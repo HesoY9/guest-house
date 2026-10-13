@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{staff/layout :: layout(title='Housekeeping', section='HOUSEKEEPING', content=~{::content})}">
+<body>
+<!-- Board of rooms by state (FR24, FR25). Refreshes after every action and once a minute. -->
+<div th:fragment="content" id="hk-board" class="page page-scroll"
+     th:hx-get="@{/web/housekeeping}" hx-trigger="dataChanged from:body, every 60s"
+     hx-select="#hk-board" hx-swap="outerHTML">
+
+    <div class="page-head">
+        <div>
+            <p class="eyebrow" th:text="${@fmt.longDate(today)}">Today</p>
+            <h2 class="page-heading">
+                <span th:text="${cleanCount}">0</span>
+                to clean · <span th:text="${roomCount}">0</span> rooms
+            </h2>
+        </div>
+    </div>
+
+    <div class="board">
+        <section th:each="col : ${columns}" class="board-col" th:classappend="'col-' + ${#strings.toLowerCase(col.key.name())}">
+            <header class="board-head">
+                <span th:replace="~{fragments/ui :: roomStatus(${col.key})}"></span>
+                <span class="count" th:text="${col.value.size()}">0</span>
+            </header>
+            <p th:if="${col.value.isEmpty()}" class="empty small">None</p>
+            <article th:each="room : ${col.value}" class="room-card"
+                     th:with="next=${nextArrival.get(room.id)}"
+                     th:classappend="${next != null and !next.checkInDate.isAfter(today) and col.key.name() == 'CLEANING_REQUIRED'} ? 'urgent'">
+                <div class="room-card-top">
+                    <strong class="room-no" th:text="${room.roomNumber}">101</strong>
+                    <span class="muted small" th:text="${room.type} + ' · sleeps ' + ${room.capacity}">Double</span>
+                </div>
+                <p class="room-next small" th:if="${next != null and col.key.name() != 'OCCUPIED'}">
+                    <th:block th:if="${!next.checkInDate.isAfter(today)}"><strong>Guest arriving today</strong></th:block>
+                    <th:block th:if="${next.checkInDate.isAfter(today)}">Next arrival <span th:text="${@fmt.shortDate(next.checkInDate)}">date</span></th:block>
+                </p>
+                <div class="room-card-actions">
+                    <button th:if="${col.key.name() == 'CLEANING_REQUIRED'}" type="button" class="btn btn-primary btn-sm btn-block"
+                            th:hx-post="@{/web/housekeeping/{id}/clean(id=${room.id})}">
+                        <svg th:replace="~{fragments/ui :: icon('i-check')}"></svg> Mark clean
+                    </button>
+                    <button th:if="${col.key.name() == 'AVAILABLE' or col.key.name() == 'RESERVED'}" type="button" class="btn btn-ghost btn-sm btn-block"
+                            th:hx-post="@{/web/housekeeping/{id}/dirty(id=${room.id})}">Needs cleaning</button>
+                </div>
+            </article>
+        </section>
+    </div>
+</div>
+</body>
+</html>

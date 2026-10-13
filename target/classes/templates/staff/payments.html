@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{staff/layout :: layout(title='Payments', section='PAYMENTS', content=~{::content})}">
+<body>
+<div th:fragment="content" class="page page-fill">
+
+    <div class="toolbar">
+        <form class="segmented" th:hx-get="@{/web/payments}" hx-target="#pay-page" hx-select="#pay-page"
+              hx-swap="outerHTML" hx-push-url="true" hx-trigger="change">
+            <label><input type="radio" name="filter" value="unpaid" th:checked="${filter != 'all'}"><span>Unpaid</span></label>
+            <label><input type="radio" name="filter" value="all" th:checked="${filter == 'all'}"><span>All invoices</span></label>
+        </form>
+        <span class="spacer"></span>
+        <span class="muted">Guests pay at the property - record cash and card payments here.</span>
+    </div>
+
+    <div id="pay-page" class="split"
+         th:hx-get="@{/web/payments(filter=${filter})}" hx-trigger="dataChanged from:body"
+         hx-select="#pay-page" hx-swap="outerHTML">
+        <div class="panel table-panel">
+            <table class="table">
+                <thead>
+                <tr><th>Invoice</th><th>Guest</th><th>Room</th><th>Stay</th><th class="num">Total</th>
+                    <th class="num">Paid</th><th class="num">Balance</th><th>Status</th><th class="actions-col"><span class="sr-only">Actions</span></th></tr>
+                </thead>
+                <tbody>
+                <tr th:if="${invoices.isEmpty()}">
+                    <td colspan="9" class="empty" th:text="${filter == 'all'} ? 'No invoices yet.' : 'Nothing outstanding - every invoice is paid.'">None</td>
+                </tr>
+                <tr th:each="s : ${invoices}" class="row-link" th:attr="data-drawer-url=@{/web/invoices/{id}(id=${s.invoice().id})}">
+                    <td class="mono" th:text="${s.invoice().number}">INV</td>
+                    <td><strong th:text="${s.invoice().reservation.guest.name}">Guest</strong></td>
+                    <td th:text="${s.invoice().reservation.room.roomNumber}">101</td>
+                    <td class="nowrap" th:text="${@fmt.shortDate(s.invoice().reservation.checkInDate)} + ' – ' + ${@fmt.shortDate(s.invoice().reservation.checkOutDate)}">dates</td>
+                    <td class="num" th:text="${@fmt.lkr(s.total())}">LKR</td>
+                    <td class="num" th:text="${@fmt.lkr(s.paid())}">LKR</td>
+                    <td class="num"><strong th:text="${@fmt.lkr(s.balance())}">LKR</strong></td>
+                    <td><span class="badge" th:classappend="'badge-' + ${s.tone()}" th:text="${s.state()}">Unpaid</span></td>
+                    <td class="actions-col">
+                        <button th:unless="${s.settled()}" type="button" class="btn btn-xs btn-primary"
+                                th:hx-get="@{/web/invoices/{id}(id=${s.invoice().id})}" hx-target="#drawer-body">Take payment</button>
+                        <a class="btn btn-xs" th:href="@{/web/invoices/{id}/print(id=${s.invoice().id})}" target="_blank" rel="noopener" title="Print invoice">
+                            <svg th:replace="~{fragments/ui :: icon('i-printer')}"></svg>
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <aside class="side-stack">
+            <div class="kpi" th:classappend="${outstanding > 0} ? 'kpi-alert'">
+                <span class="kpi-label">Outstanding</span>
+                <strong th:text="${@fmt.lkr(outstanding)}">LKR 0</strong>
+                <span class="kpi-sub" th:text="${@fmt.plural(unpaidCount, 'unpaid invoice', 'unpaid invoices')}">0</span>
+            </div>
+            <section class="card">
+                <header class="card-head"><h3>Latest payments</h3></header>
+                <p th:if="${recentPayments.isEmpty()}" class="empty">No payments yet.</p>
+                <ul class="list" th:unless="${recentPayments.isEmpty()}">
+                    <li class="list-row" th:each="p : ${recentPayments}">
+                        <div class="list-main">
+                            <strong th:text="${p.invoice.reservation.guest.name}">Guest</strong>
+                            <span class="muted small" th:text="${p.receiptNumber} + ' · ' + ${@fmt.shortDate(p.paymentDate)} + ' · ' + ${#strings.capitalize(#strings.toLowerCase(p.method.name()))}">RC</span>
+                        </div>
+                        <div class="list-actions">
+                            <span class="amount" th:text="${@fmt.lkr(p.amount)}">LKR</span>
+                            <a class="icon-btn" th:href="@{/web/payments/{id}/receipt(id=${p.id})}" target="_blank" rel="noopener" title="Print receipt">
+                                <svg th:replace="~{fragments/ui :: icon('i-printer')}"></svg>
+                            </a>
+                        </div>
+                    </li>
+                </ul>
+            </section>
+        </aside>
+    </div>
+
+    <!-- Opened from a "Take payment" link elsewhere (e.g. right after check-out) -->
+    <div th:if="${open != null}" th:hx-get="@{/web/invoices/{id}(id=${open})}" hx-target="#drawer-body" hx-trigger="load"></div>
+</div>
+</body>
+</html>

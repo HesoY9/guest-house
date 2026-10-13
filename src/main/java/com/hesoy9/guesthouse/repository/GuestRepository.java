@@ -18,6 +18,16 @@ public interface GuestRepository extends JpaRepository<Guest, Long> {
     // partial, case-insensitive match - for a search box (FR13)
     List<Guest> findByNameContainingIgnoreCase(String name);
 
+    // Staff search box: matches name, ID/passport, phone or email.
+    @Query("SELECT g FROM Guest g WHERE LOWER(g.name) LIKE LOWER(CONCAT('%', :q, '%')) " +
+           "OR LOWER(g.idOrPassport) LIKE LOWER(CONCAT('%', :q, '%')) " +
+           "OR g.contactNumber LIKE CONCAT('%', :q, '%') " +
+           "OR LOWER(g.email) LIKE LOWER(CONCAT('%', :q, '%')) " +
+           "ORDER BY g.name")
+    List<Guest> search(@Param("q") String q);
+
+    List<Guest> findAllByOrderByNameAsc();
+
     // links a Google account to its Guest record
     Optional<Guest> findByEmail(String email);
 }

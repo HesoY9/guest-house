@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{staff/layout :: layout(title='Staff accounts', section='USERS', content=~{::content})}">
+<body>
+<div th:fragment="content" class="page page-scroll">
+    <div class="toolbar">
+        <span class="toolbar-title">Who can log in to the staff portal</span>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-primary" th:hx-get="@{/web/users/new}" hx-target="#drawer-body">
+            <svg th:replace="~{fragments/ui :: icon('i-plus')}"></svg> New account
+        </button>
+    </div>
+
+    <div id="user-list" class="panel"
+         th:hx-get="@{/web/users}" hx-trigger="dataChanged from:body" hx-select="#user-list" hx-swap="outerHTML">
+        <table class="table">
+            <thead><tr><th>Username</th><th>Role</th><th>Status</th><th class="actions-col"><span class="sr-only">Actions</span></th></tr></thead>
+            <tbody>
+            <tr th:each="user : ${users}">
+                <td>
+                    <strong th:text="${user.username}">admin</strong>
+                    <span th:if="${user.username == currentUser}" class="chip">You</span>
+                </td>
+                <td th:text="${user.role.label}">Administrator</td>
+                <td>
+                    <span th:if="${user.enabled}" class="badge badge-success">Active</span>
+                    <span th:unless="${user.enabled}" class="badge badge-muted">Disabled</span>
+                </td>
+                <td class="actions-col">
+                    <button type="button" class="btn btn-xs btn-danger-ghost"
+                            th:if="${user.enabled and user.username != currentUser}"
+                            th:hx-put="@{/web/users/{id}/disable(id=${user.id})}"
+                            th:hx-confirm="'Disable ' + ${user.username} + '? They will be logged out and can\'t log in again until re-enabled.'">Disable</button>
+                    <button type="button" class="btn btn-xs" th:unless="${user.enabled}"
+                            th:hx-put="@{/web/users/{id}/enable(id=${user.id})}">Re-enable</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- The access rules come from StaffSection.java - this table just shows them. -->
+    <section class="card">
+        <header class="card-head"><h3>What each role can open</h3></header>
+        <div class="table-scroll">
+            <table class="table table-compact access-matrix">
+                <thead>
+                <tr><th>Page</th>
+                    <th th:each="role : ${roles}" th:text="${role.label}">Role</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="s : ${sectionsByRole}">
+                    <td th:text="${s.label}">Page</td>
+                    <td th:each="role : ${roles}" class="center">
+                        <span th:if="${s.allows(role)}" class="yes" aria-label="Yes"><svg th:replace="~{fragments/ui :: icon('i-check')}"></svg></span>
+                        <span th:unless="${s.allows(role)}" class="muted" aria-label="No">—</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+</body>
+</html>

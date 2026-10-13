@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!--
+  Staff portal shell. Every staff page uses it like this:
+    <html th:replace="~{staff/layout :: layout(title='Rooms', section='ROOMS', content=~{::content})}">
+  - left sidebar: built from StaffSection, so each role only sees its own menu
+  - top bar: page title, signed-in user, log out
+  - content: fills the rest of the screen; tables scroll inside it, the page itself doesn't
+  - #drawer: the slide-over panel that forms and details load into (hx-target="#drawer-body")
+  - #toasts: where success/error messages pop up (see staff.js)
+-->
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:fragment="layout(title, section, content)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- CSRF token for HTMX requests - staff.js copies it into a request header -->
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
+    <title th:text="${title} + ' · Beachside Heaven Staff'">Staff · Beachside Heaven</title>
+    <link rel="icon" th:href="@{/img/favicon.svg}" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/staff.css}">
+    <!-- No attribute inheritance: each element states its own hx-target/hx-swap/hx-select, so a
+         self-refreshing container never leaks its settings onto the buttons inside it. -->
+    <meta name="htmx-config" content='{"disableInheritance": true}'>
+    <script th:src="@{/js/htmx.min.js}" defer></script>
+    <script th:src="@{/js/staff.js}" defer></script>
+</head>
+<body class="app" th:attr="data-toast=${toast}">
+
+<aside class="sidebar" id="sidebar">
+    <a class="brand" th:href="@{/web}">
+        <span class="brand-mark"><svg th:replace="~{fragments/ui :: icon('i-waves')}"></svg></span>
+        <span class="brand-text">Beachside Heaven<small>Staff portal</small></span>
+    </a>
+    <nav class="side-nav" aria-label="Main">
+        <a th:each="s : ${navSections}" th:href="@{${s.path}}" class="side-link"
+           th:classappend="${s.name() == section} ? 'active'"
+           th:attr="aria-current=${s.name() == section} ? 'page' : null">
+            <svg th:replace="~{fragments/ui :: icon(${s.icon})}"></svg>
+            <span th:text="${s.label}">Section</span>
+        </a>
+    </nav>
+    <div class="sidebar-foot">
+        <a th:href="@{/}" target="_blank" rel="noopener" class="side-link subtle">
+            <svg th:replace="~{fragments/ui :: icon('i-sun')}"></svg><span>Open guest website</span>
+        </a>
+    </div>
+</aside>
+<div class="sidebar-scrim" data-sidebar-close></div>
+
+<div class="main">
+    <header class="topbar">
+        <button type="button" class="icon-btn menu-btn" data-sidebar-toggle aria-label="Open menu">
+            <svg th:replace="~{fragments/ui :: icon('i-menu')}"></svg>
+        </button>
+        <h1 class="page-title" th:text="${title}">Title</h1>
+        <div class="topbar-user" th:if="${currentUser != null}">
+            <span class="avatar" th:text="${#strings.toUpperCase(#strings.substring(currentUser, 0, 1))}">A</span>
+            <span class="user-meta">
+                <strong th:text="${currentUser}">admin</strong>
+                <small th:text="${currentRole != null} ? ${currentRole.label} : ''">Administrator</small>
+            </span>
+            <form th:action="@{/web/logout}" method="post">
+                <button type="submit" class="btn btn-ghost btn-sm" title="Log out">
+                    <svg th:replace="~{fragments/ui :: icon('i-logout')}"></svg><span class="hide-sm">Log out</span>
+                </button>
+            </form>
+        </div>
+    </header>
+
+    <main class="content" th:insert="${content}"></main>
+</div>
+
+<!-- Slide-over panel. Anything loaded into #drawer-body opens it; HX-Trigger "closeDrawer" closes it. -->
+<div id="drawer" class="drawer" aria-hidden="true">
+    <div class="drawer-scrim" data-drawer-close></div>
+    <section class="drawer-panel" role="dialog" aria-modal="true" aria-label="Details panel">
+        <div id="drawer-body" class="drawer-body"></div>
+    </section>
+</div>
+
+<div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
+</body>
+</html>

@@ -1,31 +1,68 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>My Bookings - Hesoy9 Guest House</title>
-    <link rel="stylesheet" th:href="@{/css/site.css}">
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{site/layout :: layout(title='My bookings', content=~{::content})}">
 <body>
-<div th:replace="~{site/fragments/site-nav :: nav}"></div>
+<th:block th:fragment="content">
+    <div class="container narrow my-bookings">
+        <h1 class="page-h1">My bookings</h1>
 
-<main class="container">
-    <h1>My Bookings</h1>
+        <p th:if="${successMessage}" class="notice notice-success" role="status" th:text="${successMessage}">Done</p>
+        <p th:if="${errorMessage}" class="notice notice-error" role="alert" th:text="${errorMessage}">Error</p>
 
-    <p th:if="${#lists.isEmpty(reservations)}">You haven't made any bookings yet.</p>
+        <div th:if="${upcoming.isEmpty() and past.isEmpty()}" class="empty-state">
+            <svg th:replace="~{fragments/ui :: icon('i-calendar')}"></svg>
+            <h2>No bookings yet</h2>
+            <p>When you book a room it will appear here.</p>
+            <a th:href="@{/rooms}" class="btn btn-primary">Find a room</a>
+        </div>
 
-    <table th:unless="${#lists.isEmpty(reservations)}">
-        <thead>
-        <tr><th>Room</th><th>Check-in</th><th>Check-out</th><th>Status</th></tr>
-        </thead>
-        <tbody>
-        <tr th:each="reservation : ${reservations}">
-            <td th:text="${reservation.room.roomNumber}"></td>
-            <td th:text="${reservation.checkInDate}"></td>
-            <td th:text="${reservation.checkOutDate}"></td>
-            <td th:text="${reservation.status}"></td>
-        </tr>
-        </tbody>
-    </table>
-</main>
+        <section th:unless="${upcoming.isEmpty()}" class="booking-section">
+            <h2>Upcoming</h2>
+            <article th:each="r : ${upcoming}" class="booking-card card">
+                <a th:href="@{/my-bookings/{id}(id=${r.id})}" class="booking-card-media" tabindex="-1" aria-hidden="true">
+                    <img th:if="${r.room.coverPhotoUrl != null}" th:src="${r.room.coverPhotoSrc}" alt="" loading="lazy">
+                    <div th:unless="${r.room.coverPhotoUrl != null}" class="photo-placeholder"><svg th:replace="~{fragments/ui :: icon('i-waves')}"></svg></div>
+                </a>
+                <div class="booking-card-body">
+                    <div class="booking-card-top">
+                        <h3 th:text="${r.room.type} + ' Room ' + ${r.room.roomNumber}">Room</h3>
+                        <span class="pill" th:classappend="'pill-' + ${r.stage.tone}" th:text="${r.stage.label}">Upcoming</span>
+                    </div>
+                    <p class="booking-dates" th:text="${@fmt.longDate(r.checkInDate)} + ' → ' + ${@fmt.longDate(r.checkOutDate)}">dates</p>
+                    <p class="muted small">
+                        <span th:text="${r.reference}">BH</span> ·
+                        <span th:text="${@fmt.plural(r.nights, 'night', 'nights')}">1 night</span> ·
+                        <span th:text="${@fmt.plural(r.numberOfGuests, 'guest', 'guests')}">1 guest</span> ·
+                        <strong th:text="${@fmt.lkr(r.estimatedTotal)}">LKR</strong> at the property
+                    </p>
+                    <div class="booking-card-actions">
+                        <a th:href="@{/my-bookings/{id}(id=${r.id})}" class="btn btn-outline btn-sm">
+                            <svg th:replace="~{fragments/ui :: icon('i-printer')}"></svg> View &amp; print
+                        </a>
+                        <form th:if="${r.guestCancellable}" th:action="@{/my-bookings/{id}/cancel(id=${r.id})}" method="post"
+                              class="inline-form" data-confirm="Cancel this booking? This can't be undone.">
+                            <button type="submit" class="btn btn-danger-outline btn-sm">Cancel booking</button>
+                        </form>
+                        <span th:unless="${r.guestCancellable}" class="muted small">You're checked in - contact the front desk for changes.</span>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <section th:unless="${past.isEmpty()}" class="booking-section">
+            <h2>Past &amp; cancelled</h2>
+            <ul class="past-list card">
+                <li th:each="r : ${past}">
+                    <div>
+                        <strong th:text="${r.room.type} + ' Room ' + ${r.room.roomNumber}">Room</strong>
+                        <span class="muted small" th:text="${@fmt.date(r.checkInDate)} + ' → ' + ${@fmt.date(r.checkOutDate)} + ' · ' + ${r.reference}">dates</span>
+                    </div>
+                    <span class="pill" th:classappend="'pill-' + ${r.stage.tone}" th:text="${r.stage.label}">Completed</span>
+                    <a th:href="@{/my-bookings/{id}(id=${r.id})}" class="text-link small">Details</a>
+                </li>
+            </ul>
+        </section>
+    </div>
+</th:block>
 </body>
 </html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<!-- Printable payment receipt (FR23, DR4 - one for every payment). -->
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:with="r=${payment.invoice.reservation}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="'Receipt ' + ${payment.receiptNumber} + ' · Beachside Heaven'">Receipt</title>
+    <link rel="icon" th:href="@{/img/favicon.svg}" type="image/svg+xml">
+    <link rel="stylesheet" th:href="@{/css/print.css}">
+</head>
+<body>
+<div class="toolbar no-print">
+    <button type="button" onclick="window.print()">Print</button>
+    <button type="button" onclick="window.close()">Close</button>
+</div>
+<main class="sheet sheet-narrow">
+    <header class="sheet-head">
+        <div class="brand">
+            <img th:src="@{/img/favicon.svg}" alt="" width="40" height="40">
+            <div><strong>Beachside Heaven</strong><span>Guest house</span></div>
+        </div>
+        <div class="doc-title">
+            <h1>Receipt</h1>
+            <p th:text="${payment.receiptNumber}">RC</p>
+        </div>
+    </header>
+
+    <p class="amount-big" th:text="${@fmt.lkr(payment.amount)}">LKR 0</p>
+    <p class="center">received with thanks</p>
+
+    <table class="kv">
+        <tr><th>Received from</th><td th:text="${r.guest.name}">Guest</td></tr>
+        <tr><th>Date</th><td th:text="${@fmt.longDate(payment.paymentDate)}">date</td></tr>
+        <tr><th>Method</th><td th:text="${#strings.capitalize(#strings.toLowerCase(payment.method.name()))}">Cash</td></tr>
+        <tr><th>For</th><td th:text="'Invoice ' + ${payment.invoice.number} + ' · booking ' + ${r.reference}">INV</td></tr>
+        <tr><th>Stay</th><td th:text="'Room ' + ${r.room.roomNumber} + ', ' + ${@fmt.date(r.checkInDate)} + ' - ' + ${@fmt.date(r.checkOutDate)}">stay</td></tr>
+        <tr><th>Invoice total</th><td th:text="${@fmt.lkr(summary.total())}">LKR</td></tr>
+        <tr><th>Balance remaining</th><td><strong th:text="${@fmt.lkr(summary.balance())}">LKR</strong></td></tr>
+        <tr th:if="${payment.receivedBy != null}"><th>Received by</th><td th:text="${payment.receivedBy}">staff</td></tr>
+    </table>
+
+    <footer class="sheet-foot">Beachside Heaven · Thank you</footer>
+</main>
+</body>
+</html>

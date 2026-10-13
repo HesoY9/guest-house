@@ -7,8 +7,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.Map;
 
-// Applies to every @RestController automatically - no per-controller try/catch needed.
-@RestControllerAdvice
+// Applies to every REST controller in this package automatically - no per-controller try/catch needed.
+// (Scoped to this package so the staff and guest web pages keep their own HTML error handling.)
+@RestControllerAdvice(basePackages = "com.hesoy9.guesthouse.controller")
 public class GlobalExceptionHandler {
 
     // Thrown for "not found" and invalid input across your services -> 400 Bad Request

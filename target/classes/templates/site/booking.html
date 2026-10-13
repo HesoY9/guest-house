@@ -1,40 +1,85 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Book a Room - Hesoy9 Guest House</title>
-    <link rel="stylesheet" th:href="@{/css/site.css}">
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{site/layout :: layout(title='Confirm your booking', content=~{::content})}">
 <body>
-<div th:replace="~{site/fragments/site-nav :: nav}"></div>
+<th:block th:fragment="content" th:with="room=${quote.room()}">
+    <div class="container booking-page">
+        <a th:href="@{/rooms/{id}(id=${room.id})}" class="back-link">
+            <svg th:replace="~{fragments/ui :: icon('i-chevron-left')}"></svg> Back to the room
+        </a>
+        <h1 class="page-h1">Confirm and book</h1>
 
-<main class="container booking-page">
-    <div class="room-summary">
-        <img th:if="${room.imageUrl != null}"
-             th:src="${room.imageUrl.startsWith('http')} ? ${room.imageUrl} : @{'/images/' + ${room.imageUrl}}"
-             alt="" class="room-summary-image">
-        <h1 th:text="${room.type} + ' - Room ' + ${room.roomNumber}"></h1>
-        <p th:text="${room.description} ?: 'A comfortable room at our guest house.'"></p>
-        <p class="room-card-price"><strong th:text="'$' + ${room.price}"></strong> / night</p>
+        <div class="booking-layout">
+            <!-- th:action: Thymeleaf adds the CSRF field automatically -->
+            <form id="booking-form" class="booking-form card" th:action="@{/book/{id}(id=${room.id})}" method="post">
+                <p th:if="${errorMessage}" class="notice notice-error" role="alert" th:text="${errorMessage}">Error</p>
+
+                <section class="form-section">
+                    <h2>Your stay</h2>
+                    <div class="date-pair">
+                        <label><span>Check-in</span>
+                            <input type="date" name="checkInDate" th:value="${form.checkInDate}" th:min="${today}" required data-checkin>
+                        </label>
+                        <label><span>Check-out</span>
+                            <input type="date" name="checkOutDate" th:value="${form.checkOutDate}" th:min="${today.plusDays(1)}" required data-checkout>
+                        </label>
+                    </div>
+                    <label class="field"><span>Guests</span>
+                        <select name="numberOfGuests" required>
+                            <option th:each="n : ${#numbers.sequence(1, room.capacity)}" th:value="${n}"
+                                    th:text="${@fmt.plural(n, 'guest', 'guests')}" th:selected="${n == form.numberOfGuests}">1 guest</option>
+                        </select>
+                        <small class="hint" th:text="'This room sleeps up to ' + ${room.capacity} + '.'">hint</small>
+                    </label>
+                </section>
+
+                <section class="form-section">
+                    <h2>Your details</h2>
+                    <p class="muted small">Booking as <strong th:text="${guest.name}">Name</strong><span th:if="${guest.email != null}" th:text="' (' + ${guest.email} + ')'"> (email)</span></p>
+                    <label class="field"><span>Mobile number</span>
+                        <input type="tel" name="contactNumber" th:value="${form.contactNumber}" required maxlength="20"
+                               autocomplete="tel" placeholder="e.g. +94 77 123 4567">
+                        <small class="hint">So we can reach you about your stay.</small>
+                    </label>
+                    <label class="field"><span>Special requests <em>(optional)</em></span>
+                        <textarea name="specialRequests" rows="3" maxlength="500" th:text="${form.specialRequests}"
+                                  placeholder="Arrival time, extra bed, dietary needs…"></textarea>
+                    </label>
+                </section>
+
+                <section class="form-section policies">
+                    <h2>Payment &amp; cancellation</h2>
+                    <ul class="policy-list">
+                        <li><svg th:replace="~{fragments/ui :: icon('i-wallet')}"></svg>
+                            <span><strong>Pay at the property.</strong> Nothing is charged now - pay by cash or card during your stay.</span></li>
+                        <li><svg th:replace="~{fragments/ui :: icon('i-undo')}"></svg>
+                            <span><strong>Free online cancellation</strong> from My bookings, any time before check-in.</span></li>
+                        <li><svg th:replace="~{fragments/ui :: icon('i-user')}"></svg>
+                            <span><strong>Bring your ID or passport</strong> - it's needed at check-in.</span></li>
+                    </ul>
+                </section>
+
+                <button type="submit" class="btn btn-coral btn-lg btn-block">Confirm booking</button>
+            </form>
+
+            <!-- Summary: nights × price = total, refreshed live as the dates/guests change -->
+            <aside class="summary card">
+                <div class="summary-room">
+                    <img th:if="${room.coverPhotoUrl != null}" th:src="${room.coverPhotoSrc}" alt="">
+                    <div th:unless="${room.coverPhotoUrl != null}" class="photo-placeholder"><svg th:replace="~{fragments/ui :: icon('i-waves')}"></svg></div>
+                    <div>
+                        <strong th:text="${room.type} + ' Room'">Double Room</strong>
+                        <span class="muted small" th:text="'Room ' + ${room.roomNumber} + ' · sleeps ' + ${room.capacity}">Room</span>
+                    </div>
+                </div>
+                <h2>Price summary</h2>
+                <div class="quote-slot" th:hx-get="@{/rooms/{id}/quote(id=${room.id})}" hx-include="#booking-form"
+                     hx-trigger="change from:#booking-form" hx-swap="innerHTML">
+                    <div th:replace="~{site/fragments/quote :: quote}"></div>
+                </div>
+            </aside>
+        </div>
     </div>
-
-    <form class="booking-form" th:action="@{/book/{id}(id=${room.id})}" method="post">
-        <p th:if="${errorMessage}" class="feedback error" th:text="${errorMessage}"></p>
-
-        <label>Check-in
-            <input type="date" name="checkInDate" required>
-        </label>
-        <label>Check-out
-            <input type="date" name="checkOutDate" required>
-        </label>
-        <label>Number of guests
-            <input type="number" name="numberOfGuests" min="1" required>
-        </label>
-        <label>Contact number
-            <input type="text" name="contactNumber" th:value="${guest.contactNumber}" required>
-        </label>
-        <button type="submit">Confirm Booking</button>
-    </form>
-</main>
+</th:block>
 </body>
 </html>

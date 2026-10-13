@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<!--
+  Public website shell. Pages use it like this:
+    <html th:replace="~{site/layout :: layout(title='Rooms', content=~{::content})}">
+-->
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:fragment="layout(title, content)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0b5d6b">
+    <meta name="description" content="Beachside Heaven - book your stay online. See rooms, photos and prices in LKR, and pay at the property.">
+    <title th:text="${title} == null ? 'Beachside Heaven' : ${title} + ' · Beachside Heaven'">Beachside Heaven</title>
+    <link rel="icon" th:href="@{/img/favicon.svg}" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+    <!-- No attribute inheritance: each element states its own hx-target/hx-swap/hx-select, so a
+         self-refreshing container never leaks its settings onto the buttons inside it. -->
+    <meta name="htmx-config" content='{"disableInheritance": true}'>
+    <script th:src="@{/js/htmx.min.js}" defer></script>
+    <script th:src="@{/js/site.js}" defer></script>
+</head>
+<body>
+<header class="site-header">
+    <nav class="nav container" aria-label="Main">
+        <a th:href="@{/}" class="logo">
+            <span class="logo-mark"><svg th:replace="~{fragments/ui :: icon('i-waves')}"></svg></span>
+            <span>Beachside Heaven</span>
+        </a>
+        <button type="button" class="nav-toggle" data-nav-toggle aria-label="Menu" aria-expanded="false">
+            <svg th:replace="~{fragments/ui :: icon('i-menu')}"></svg>
+        </button>
+        <div class="nav-links" id="nav-links">
+            <a th:href="@{/rooms}">Rooms</a>
+            <th:block th:if="${googleUserName != null}">
+                <a th:href="@{/my-bookings}">My bookings</a>
+                <span class="nav-user">
+                    <span class="nav-avatar" th:text="${#strings.toUpperCase(#strings.substring(googleUserName, 0, 1))}">A</span>
+                    <span th:text="${googleUserName}">Name</span>
+                </span>
+                <!-- th:action adds the CSRF field Spring Security's /logout requires -->
+                <form th:action="@{/logout}" method="post" class="inline-form">
+                    <button type="submit" class="nav-btn-link">Sign out</button>
+                </form>
+            </th:block>
+            <a th:if="${googleUserName == null}" th:href="@{/oauth2/authorization/google}" class="btn btn-light btn-sm">
+                Sign in with Google
+            </a>
+        </div>
+    </nav>
+</header>
+
+<main th:insert="${content}"></main>
+
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <div>
+            <a th:href="@{/}" class="logo logo-footer">
+                <span class="logo-mark"><svg th:replace="~{fragments/ui :: icon('i-waves')}"></svg></span>
+                <span>Beachside Heaven</span>
+            </a>
+            <p>Book online in minutes. Pay at the property by cash or card.</p>
+        </div>
+        <ul class="footer-links">
+            <li><a th:href="@{/rooms}">All rooms</a></li>
+            <li><a th:href="@{/my-bookings}">My bookings</a></li>
+            <li><a th:href="@{/web/login}">Staff login</a></li>
+        </ul>
+    </div>
+    <div class="container footer-base">© <span th:text="${today != null} ? ${today.year} : ''">2026</span> Beachside Heaven</div>
+</footer>
+</body>
+</html>

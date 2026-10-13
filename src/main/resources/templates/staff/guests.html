@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{staff/layout :: layout(title='Guests', section='GUESTS', content=~{::content})}">
+<body>
+<div th:fragment="content" class="page page-fill">
+
+    <!-- FR13: live search as you type -->
+    <form class="toolbar" th:hx-get="@{/web/guests}" hx-target="#guest-list" hx-select="#guest-list"
+          hx-swap="outerHTML" hx-push-url="true" hx-trigger="input changed delay:300ms, submit">
+        <label class="search search-wide">
+            <svg th:replace="~{fragments/ui :: icon('i-search')}"></svg>
+            <input type="search" name="q" th:value="${q}" placeholder="Search name, ID/passport, phone or email" aria-label="Search guests">
+        </label>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-primary" th:hx-get="@{/web/guests/new}" hx-target="#drawer-body">
+            <svg th:replace="~{fragments/ui :: icon('i-plus')}"></svg> Register guest
+        </button>
+    </form>
+
+    <div id="guest-list" class="panel table-panel"
+         th:hx-get="${currentUrl}" hx-trigger="dataChanged from:body" hx-select="#guest-list" hx-swap="outerHTML">
+        <table class="table">
+            <thead>
+            <tr><th>Name</th><th>ID / passport</th><th>Phone</th><th>Email</th><th class="num">Stays</th><th class="actions-col"><span class="sr-only">Actions</span></th></tr>
+            </thead>
+            <tbody>
+            <tr th:if="${guests.isEmpty()}"><td colspan="6" class="empty">No guests found.</td></tr>
+            <tr th:each="g : ${guests}" class="row-link" th:attr="data-href=@{/web/guests/{id}(id=${g.id})}">
+                <td><strong th:text="${g.name}">Name</strong></td>
+                <td>
+                    <span th:if="${g.idOrPassport != null}" class="mono" th:text="${g.idOrPassport}">ID</span>
+                    <span th:unless="${g.idOrPassport != null}" class="muted">—</span>
+                </td>
+                <td th:text="${g.contactNumber} ?: '—'">phone</td>
+                <td th:text="${g.email} ?: '—'">email</td>
+                <td class="num" th:text="${stays.getOrDefault(g.id, 0L)}">0</td>
+                <td class="actions-col">
+                    <button type="button" class="btn btn-xs" th:hx-get="@{/web/guests/{id}/edit(id=${g.id})}" hx-target="#drawer-body">Edit</button>
+                    <button type="button" class="btn btn-xs" th:if="${allowed.contains('RESERVATIONS')}"
+                            th:hx-get="@{/web/reservations/new(guestId=${g.id})}" hx-target="#drawer-body">Book</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

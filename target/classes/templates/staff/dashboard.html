@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{staff/layout :: layout(title='Dashboard', section='DASHBOARD', content=~{::content})}">
+<body>
+<!-- Re-fetches itself after any action (dataChanged) and every 2 minutes, so the desk always sees the current day. -->
+<div th:fragment="content" id="dashboard" class="page page-scroll"
+     th:hx-get="@{/web/dashboard}" hx-trigger="dataChanged from:body, every 120s"
+     hx-select="#dashboard" hx-swap="outerHTML">
+
+    <div class="page-head">
+        <div>
+            <p class="eyebrow" th:text="${@fmt.longDate(day.date())}">Today</p>
+            <h2 class="page-heading">Today at Beachside Heaven</h2>
+        </div>
+        <div class="page-actions" th:if="${allowed.contains('RESERVATIONS')}">
+            <button type="button" class="btn btn-primary" th:hx-get="@{/web/reservations/new}" hx-target="#drawer-body">
+                <svg th:replace="~{fragments/ui :: icon('i-plus')}"></svg> New reservation
+            </button>
+        </div>
+    </div>
+
+    <section class="kpis">
+        <a class="kpi" href="#arrivals">
+            <span class="kpi-label"><svg th:replace="~{fragments/ui :: icon('i-login')}"></svg>Arrivals</span>
+            <strong th:text="${#lists.size(day.arrivals())}">0</strong>
+            <span class="kpi-sub">still to check in</span>
+        </a>
+        <a class="kpi" href="#departures">
+            <span class="kpi-label"><svg th:replace="~{fragments/ui :: icon('i-logout')}"></svg>Departures</span>
+            <strong th:text="${#lists.size(day.departures())}">0</strong>
+            <span class="kpi-sub">still to check out</span>
+        </a>
+        <div class="kpi">
+            <span class="kpi-label"><svg th:replace="~{fragments/ui :: icon('i-moon')}"></svg>In house</span>
+            <strong th:text="${#lists.size(day.inHouse())}">0</strong>
+            <span class="kpi-sub" th:text="${@fmt.percent(day.occupancyTonight())} + ' occupancy tonight'">0%</span>
+        </div>
+        <a class="kpi" href="#to-clean" th:classappend="${!day.roomsToClean().isEmpty()} ? 'kpi-warn'">
+            <span class="kpi-label"><svg th:replace="~{fragments/ui :: icon('i-sparkles')}"></svg>To clean</span>
+            <strong th:text="${#lists.size(day.roomsToClean())}">0</strong>
+            <span class="kpi-sub" th:text="'of ' + ${day.roomCount()} + ' rooms'">of 0 rooms</span>
+        </a>
+        <a class="kpi" th:href="@{/web/payments}" th:classappend="${!day.unpaidInvoices().isEmpty()} ? 'kpi-alert'">
+            <span class="kpi-label"><svg th:replace="~{fragments/ui :: icon('i-card')}"></svg>Unpaid invoices</span>
+            <strong th:text="${#lists.size(day.unpaidInvoices())}">0</strong>
+            <span class="kpi-sub" th:text="${@fmt.lkr(day.outstanding())} + ' outstanding'">LKR 0</span>
+        </a>
+    </section>
+
+    <div class="dash-grid">
+        <!-- Arrivals -->
+        <section class="card" id="arrivals">
+            <header class="card-head">
+                <h3>Arrivals</h3>
+                <span class="count" th:text="${#lists.size(day.arrivals())}">0</span>
+            </header>
+            <p th:if="${day.arrivals().isEmpty()}" class="empty">No more arrivals today.</p>
+            <ul class="list" th:unless="${day.arrivals().isEmpty()}">
+                <li class="list-row" th:each="r : ${day.arrivals()}">
+                    <div class="list-main">
+                        <button type="button" class="link-strong" th:hx-get="@{/web/reservations/{id}(id=${r.id})}" hx-target="#drawer-body" th:text="${r.guest.name}">Guest</button>
+                        <span class="muted">
+                            Room <span th:text="${r.room.roomNumber}">1</span> ·
+                            <span th:text="${@fmt.plural(r.nights, 'night', 'nights')}">1 night</span> ·
+                            <span th:text="${@fmt.plural(r.numberOfGuests, 'guest', 'guests')}">1 guest</span>
+                        </span>
+                        <span class="tag-row">
+                            <span th:if="${r.checkInDate.isBefore(day.date())}" class="badge badge-danger">Late arrival</span>
+                            <span th:if="${r.guest.idOrPassport == null}" class="badge badge-warning">ID needed</span>
+                            <span th:if="${r.room.status.name() == 'CLEANING_REQUIRED'}" class="badge badge-warning">Room not clean</span>
+                        </span>
+                    </div>
+                    <div class="list-actions">
+                        <button th:if="${r.guest.idOrPassport != null}" type="button" class="btn btn-sm btn-primary"
+                                th:hx-put="@{/web/reservations/{id}/checkin(id=${r.id})}">Check in</button>
+                        <button th:unless="${r.guest.idOrPassport != null}" type="button" class="btn btn-sm btn-primary"
+                                th:hx-get="@{/web/reservations/{id}(id=${r.id})}" hx-target="#drawer-body">Check in…</button>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <!-- Departures -->
+        <section class="card" id="departures">
+            <header class="card-head">
+                <h3>Departures</h3>
+                <span class="count" th:text="${#lists.size(day.departures())}">0</span>
+            </header>
+            <p th:if="${day.departures().isEmpty()}" class="empty">No more departures today.</p>
+            <ul class="list" th:unless="${day.departures().isEmpty()}">
+                <li class="list-row" th:each="r : ${day.departures()}">
+                    <div class="list-main">
+                        <button type="button" class="link-strong" th:hx-get="@{/web/reservations/{id}(id=${r.id})}" hx-target="#drawer-body" th:text="${r.guest.name}">Guest</button>
+                        <span class="muted">
+                            Room <span th:text="${r.room.roomNumber}">1</span> ·
+                            <span th:text="${@fmt.lkr(r.estimatedTotal)}">LKR 0</span>
+                        </span>
+                        <span class="tag-row" th:if="${r.checkOutDate.isBefore(day.date())}"><span class="badge badge-danger">Overdue</span></span>
+                    </div>
+                    <div class="list-actions">
+                        <button type="button" class="btn btn-sm btn-primary"
+                                th:hx-put="@{/web/reservations/{id}/checkout(id=${r.id})}"
+                                th:hx-confirm="'Check out ' + ${r.guest.name} + ' from room ' + ${r.room.roomNumber} + '?'">Check out</button>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <!-- Rooms to clean -->
+        <section class="card" id="to-clean">
+            <header class="card-head">
+                <h3>Rooms to clean</h3>
+                <span class="count" th:text="${#lists.size(day.roomsToClean())}">0</span>
+            </header>
+            <p th:if="${day.roomsToClean().isEmpty()}" class="empty">All rooms are clean.</p>
+            <ul class="list" th:unless="${day.roomsToClean().isEmpty()}">
+                <li class="list-row" th:each="room : ${day.roomsToClean()}">
+                    <div class="list-main">
+                        <strong th:text="'Room ' + ${room.roomNumber}">Room</strong>
+                        <span class="muted" th:text="${room.type}">Type</span>
+                    </div>
+                    <div class="list-actions" th:if="${allowed.contains('HOUSEKEEPING')}">
+                        <button type="button" class="btn btn-sm" th:hx-post="@{/web/housekeeping/{id}/clean(id=${room.id})}">
+                            <svg th:replace="~{fragments/ui :: icon('i-check')}"></svg> Mark clean
+                        </button>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <!-- Unpaid invoices -->
+        <section class="card" id="unpaid" th:if="${allowed.contains('PAYMENTS')}">
+            <header class="card-head">
+                <h3>Unpaid invoices</h3>
+                <a class="card-link" th:href="@{/web/payments}">All payments</a>
+            </header>
+            <p th:if="${day.unpaidInvoices().isEmpty()}" class="empty">Everything is paid up.</p>
+            <ul class="list" th:unless="${day.unpaidInvoices().isEmpty()}">
+                <li class="list-row" th:each="s, st : ${day.unpaidInvoices()}" th:if="${st.index < 8}">
+                    <div class="list-main">
+                        <strong th:text="${s.invoice().reservation.guest.name}">Guest</strong>
+                        <span class="muted">
+                            <span th:text="${s.invoice().number}">INV</span> ·
+                            Room <span th:text="${s.invoice().reservation.room.roomNumber}">1</span>
+                        </span>
+                    </div>
+                    <div class="list-actions">
+                        <span class="amount" th:text="${@fmt.lkr(s.balance())}">LKR 0</span>
+                        <button type="button" class="btn btn-sm" th:hx-get="@{/web/invoices/{id}(id=${s.invoice().id})}" hx-target="#drawer-body">Take payment</button>
+                    </div>
+                </li>
+            </ul>
+        </section>
+    </div>
+</div>
+</body>
+</html>

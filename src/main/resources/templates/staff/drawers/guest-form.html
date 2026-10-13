@@ -1,0 +1,40 @@
+<!-- Slide-over: register a guest (FR11) or edit one. guestId is set when editing. -->
+<form xmlns:th="http://www.thymeleaf.org" th:fragment="drawer" class="drawer-inner"
+      th:hx-post="${guestId == null} ? @{/web/guests} : @{/web/guests/{id}(id=${guestId})}" hx-target="#drawer-body">
+    <header class="drawer-head">
+        <div>
+            <p class="eyebrow">Guests</p>
+            <h2 th:text="${guestId == null} ? 'Register guest' : 'Edit ' + ${guest.name}">Register guest</h2>
+        </div>
+        <button type="button" class="icon-btn" data-drawer-close aria-label="Close">
+            <svg th:replace="~{fragments/ui :: icon('i-x')}"></svg>
+        </button>
+    </header>
+
+    <div class="drawer-scroll">
+        <p th:if="${errorMessage}" class="form-error" th:text="${errorMessage}">Error</p>
+        <label class="field"><span>Full name</span>
+            <input type="text" name="name" th:value="${guest.name}" required maxlength="100" data-autofocus autocomplete="off">
+        </label>
+        <div class="field-row">
+            <label class="field"><span>Contact number</span>
+                <input type="tel" name="contactNumber" th:value="${guest.contactNumber}" maxlength="20" autocomplete="off">
+            </label>
+            <label class="field"><span>ID / passport</span>
+                <input type="text" name="idOrPassport" th:value="${guest.idOrPassport}" maxlength="30" autocomplete="off">
+            </label>
+        </div>
+        <label class="field"><span>Email</span>
+            <input type="email" name="email" th:value="${guest.email}" maxlength="150" autocomplete="off">
+            <small class="hint">If the guest later signs in on the website with this Google address, they'll see these bookings.</small>
+        </label>
+        <label class="field"><span>Notes</span>
+            <textarea name="notes" rows="4" maxlength="1000" th:text="${guest.notes}" placeholder="Preferences, allergies, VIP…"></textarea>
+        </label>
+    </div>
+
+    <footer class="drawer-foot">
+        <button type="button" class="btn" data-drawer-close>Cancel</button>
+        <button type="submit" class="btn btn-primary" th:text="${guestId == null} ? 'Register guest' : 'Save changes'">Save</button>
+    </footer>
+</form>

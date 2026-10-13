@@ -1,30 +1,54 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Hesoy9 Guest House - Book Your Stay</title>
-    <link rel="stylesheet" th:href="@{/css/site.css}">
-    <script th:src="@{/js/htmx.min.js}"></script>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{site/layout :: layout(title=null, content=~{::content})}">
 <body>
-<div th:replace="~{site/fragments/site-nav :: nav}"></div>
+<th:block th:fragment="content">
+    <section class="hero">
+        <div class="hero-bg" aria-hidden="true">
+            <svg class="hero-waves" viewBox="0 0 1440 220" preserveAspectRatio="none">
+                <path d="M0 120 C 240 60 480 180 720 120 S 1200 60 1440 120 V220 H0z" fill="rgba(255,255,255,.08)"/>
+                <path d="M0 160 C 260 110 520 210 760 160 S 1220 110 1440 160 V220 H0z" fill="rgba(255,255,255,.10)"/>
+                <path d="M0 190 C 300 160 560 230 820 195 S 1240 165 1440 195 V220 H0z" fill="#fbf8f3"/>
+            </svg>
+        </div>
+        <div class="container hero-inner">
+            <p class="hero-kicker">Beachside Heaven</p>
+            <h1>Wake up to the sound of the waves</h1>
+            <p class="hero-sub">Choose your dates, pick a room you love, and book in a couple of minutes. You pay when you arrive.</p>
+            <div th:replace="~{site/fragments/search-bar :: bar(${search})}"></div>
+        </div>
+    </section>
 
-<section class="hero">
-    <h1>Find your perfect stay</h1>
-    <p>Comfortable rooms, easy booking.</p>
-    <form class="search-bar" th:hx-get="@{/search}" hx-target="#room-grid" hx-swap="outerHTML">
-        <label>Check-in
-            <input type="date" name="checkInDate" required>
-        </label>
-        <label>Check-out
-            <input type="date" name="checkOutDate" required>
-        </label>
-        <button type="submit">Search</button>
-    </form>
-</section>
+    <section class="container perks">
+        <div class="perk">
+            <span class="perk-icon"><svg th:replace="~{fragments/ui :: icon('i-calendar')}"></svg></span>
+            <div><strong>Instant confirmation</strong><p>See live availability and get your booking reference straight away.</p></div>
+        </div>
+        <div class="perk">
+            <span class="perk-icon"><svg th:replace="~{fragments/ui :: icon('i-wallet')}"></svg></span>
+            <div><strong>Pay at the property</strong><p>No card needed online - settle up by cash or card during your stay.</p></div>
+        </div>
+        <div class="perk">
+            <span class="perk-icon"><svg th:replace="~{fragments/ui :: icon('i-undo')}"></svg></span>
+            <div><strong>Cancel online</strong><p>Plans changed? Cancel from My bookings any time before check-in.</p></div>
+        </div>
+    </section>
 
-<main class="container">
-    <div th:replace="~{site/fragments/room-grid :: grid}"></div>
-</main>
+    <section class="container section">
+        <div class="section-head">
+            <div>
+                <h2>Our rooms</h2>
+                <p class="muted">Prices are per room, per night, in Sri Lankan rupees.</p>
+            </div>
+            <a th:href="@{/rooms}" class="btn btn-outline">See all rooms</a>
+        </div>
+        <p th:if="${rooms.isEmpty()}" class="empty-state">Rooms are being added - please check back soon.</p>
+        <div class="room-grid">
+            <th:block th:each="room : ${rooms}">
+                <article th:replace="~{site/fragments/room-card :: card(${room}, null, 0)}"></article>
+            </th:block>
+        </div>
+    </section>
+</th:block>
 </body>
 </html>

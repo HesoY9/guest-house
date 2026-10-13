@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{staff/layout :: layout(title='Guest profile', section='GUESTS', content=~{::content})}">
+<body>
+<!-- Guest profile with full history (FR12). -->
+<div th:fragment="content" id="guest-profile" class="page page-scroll"
+     th:hx-get="${currentUrl}" hx-trigger="dataChanged from:body" hx-select="#guest-profile" hx-swap="outerHTML">
+
+    <a class="back-link" th:href="@{/web/guests}">
+        <svg th:replace="~{fragments/ui :: icon('i-chevron-left')}"></svg> All guests
+    </a>
+
+    <section class="card profile-head">
+        <div class="profile-id">
+            <span class="avatar avatar-lg" th:text="${#strings.toUpperCase(#strings.substring(guest.name, 0, 1))}">G</span>
+            <div>
+                <h2 th:text="${guest.name}">Guest</h2>
+                <ul class="contact-list">
+                    <li><svg th:replace="~{fragments/ui :: icon('i-phone')}"></svg><span th:text="${guest.contactNumber} ?: 'No phone'">phone</span></li>
+                    <li><svg th:replace="~{fragments/ui :: icon('i-mail')}"></svg><span th:text="${guest.email} ?: 'No email'">email</span></li>
+                    <li><svg th:replace="~{fragments/ui :: icon('i-user')}"></svg>
+                        <span th:if="${guest.idOrPassport != null}" th:text="'ID ' + ${guest.idOrPassport}">ID</span>
+                        <span th:unless="${guest.idOrPassport != null}" class="badge badge-warning">ID not recorded</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="page-actions">
+            <button type="button" class="btn" th:hx-get="@{/web/guests/{id}/edit(id=${guest.id})}" hx-target="#drawer-body">
+                <svg th:replace="~{fragments/ui :: icon('i-pencil')}"></svg> Edit
+            </button>
+            <button type="button" class="btn btn-primary" th:if="${allowed.contains('RESERVATIONS')}"
+                    th:hx-get="@{/web/reservations/new(guestId=${guest.id})}" hx-target="#drawer-body">
+                <svg th:replace="~{fragments/ui :: icon('i-plus')}"></svg> New booking
+            </button>
+        </div>
+        <div class="note" th:if="${guest.notes != null}">
+            <strong>Notes</strong>
+            <p th:text="${guest.notes}">notes</p>
+        </div>
+    </section>
+
+    <section class="kpis kpis-4">
+        <div class="kpi"><span class="kpi-label">Completed stays</span><strong th:text="${stats.completedStays()}">0</strong></div>
+        <div class="kpi"><span class="kpi-label">Nights stayed</span><strong th:text="${stats.nights()}">0</strong></div>
+        <div class="kpi"><span class="kpi-label">Current bookings</span><strong th:text="${stats.activeBookings()}">0</strong></div>
+        <div class="kpi"><span class="kpi-label">Cancellations</span><strong th:text="${stats.cancellations()}">0</strong></div>
+    </section>
+
+    <section class="card">
+        <header class="card-head"><h3>Stay history</h3></header>
+        <div class="table-scroll">
+            <table class="table">
+                <thead><tr><th>Ref</th><th>Room</th><th>Check-in</th><th>Check-out</th><th class="num">Nights</th><th class="num">Total</th><th>Channel</th><th>Status</th></tr></thead>
+                <tbody>
+                <tr th:if="${history.isEmpty()}"><td colspan="8" class="empty">No bookings yet.</td></tr>
+                <tr th:each="r : ${history}" class="row-link" th:attr="data-drawer-url=@{/web/reservations/{id}(id=${r.id})}">
+                    <td class="mono" th:text="${r.reference}">BH</td>
+                    <td th:text="${r.room.roomNumber} + ' · ' + ${r.room.type}">101</td>
+                    <td th:text="${@fmt.date(r.checkInDate)}">date</td>
+                    <td th:text="${@fmt.date(r.checkOutDate)}">date</td>
+                    <td class="num" th:text="${r.nights}">1</td>
+                    <td class="num" th:text="${@fmt.lkr(r.estimatedTotal)}">LKR</td>
+                    <td th:text="${r.bookingChannel.label}">Online</td>
+                    <td><span th:replace="~{fragments/ui :: stage(${r})}"></span></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card" th:if="${allowed.contains('PAYMENTS') and !invoices.isEmpty()}">
+        <header class="card-head"><h3>Invoices</h3></header>
+        <div class="table-scroll">
+            <table class="table">
+                <thead><tr><th>Invoice</th><th>Date</th><th class="num">Total</th><th class="num">Paid</th><th class="num">Balance</th><th>Status</th></tr></thead>
+                <tbody>
+                <tr th:each="s : ${invoices}" class="row-link" th:attr="data-drawer-url=@{/web/invoices/{id}(id=${s.invoice().id})}">
+                    <td class="mono" th:text="${s.invoice().number}">INV</td>
+                    <td th:text="${@fmt.date(s.invoice().generatedDate)}">date</td>
+                    <td class="num" th:text="${@fmt.lkr(s.total())}">LKR</td>
+                    <td class="num" th:text="${@fmt.lkr(s.paid())}">LKR</td>
+                    <td class="num" th:text="${@fmt.lkr(s.balance())}">LKR</td>
+                    <td><span class="badge" th:classappend="'badge-' + ${s.tone()}" th:text="${s.state()}">Paid</span></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+</body>
+</html>

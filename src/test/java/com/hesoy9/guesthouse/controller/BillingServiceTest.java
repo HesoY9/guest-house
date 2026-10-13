@@ -4,6 +4,7 @@ import com.hesoy9.guesthouse.entity.Invoice;
 import com.hesoy9.guesthouse.entity.Reservation;
 import com.hesoy9.guesthouse.entity.Room;
 import com.hesoy9.guesthouse.repository.InvoiceRepository;
+import com.hesoy9.guesthouse.repository.PaymentRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,6 +22,9 @@ class BillingServiceTest {
 
     @Mock
     private InvoiceRepository invoiceRepository;
+
+    @Mock
+    private PaymentRepository paymentRepository;
 
     @InjectMocks
     private BillingService billingService;

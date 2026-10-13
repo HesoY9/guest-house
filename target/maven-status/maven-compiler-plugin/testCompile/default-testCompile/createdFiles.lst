@@ -1,5 +1,10 @@
-com/hesoy9/guesthouse/service/CheckInOutServiceTest.class
 com/hesoy9/guesthouse/service/BillingServiceTest.class
-com/hesoy9/guesthouse/service/ReservationServiceTest.class
 com/hesoy9/guesthouse/GuesthouseApplicationTests.class
+com/hesoy9/guesthouse/GuestBookingFlowTests.class
+com/hesoy9/guesthouse/service/LoginAttemptServiceTest$TestClock.class
+com/hesoy9/guesthouse/service/LoginAttemptServiceTest.class
+com/hesoy9/guesthouse/service/CheckInOutServiceTest.class
+com/hesoy9/guesthouse/DemoDataSeeder.class
+com/hesoy9/guesthouse/service/ReservationServiceTest.class
+com/hesoy9/guesthouse/service/PaymentServiceTest.class
 com/hesoy9/guesthouse/service/UserServiceTest.class

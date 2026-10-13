@@ -1,99 +1,164 @@
 package com.hesoy9.guesthouse.web;
 
 import com.hesoy9.guesthouse.dto.ReservationRequest;
+import com.hesoy9.guesthouse.entity.BookingChannel;
 import com.hesoy9.guesthouse.entity.Guest;
 import com.hesoy9.guesthouse.entity.Invoice;
 import com.hesoy9.guesthouse.entity.Reservation;
-import com.hesoy9.guesthouse.service.CheckInOutService;
-import com.hesoy9.guesthouse.service.GuestService;
-import com.hesoy9.guesthouse.service.ReservationService;
-import com.hesoy9.guesthouse.service.RoomService;
+import com.hesoy9.guesthouse.entity.ReservationStatus;
+import com.hesoy9.guesthouse.repository.InvoiceRepository;
+import com.hesoy9.guesthouse.service.*;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+
 @Controller
 @RequestMapping("/web/reservations")
 public class ReservationWebController {
 
-    private static final String SECTION_FRAGMENT = "fragments/reservations-section :: section";
+    private static final String NEW_DRAWER = "staff/drawers/reservation-new :: drawer";
+    private static final String DETAIL_DRAWER = "staff/drawers/reservation-detail :: drawer";
 
     private final ReservationService reservationService;
     private final CheckInOutService checkInOutService;
     private final GuestService guestService;
     private final RoomService roomService;
+    private final NotificationService notificationService;
+    private final InvoiceRepository invoiceRepository;
 
     public ReservationWebController(ReservationService reservationService,
                                      CheckInOutService checkInOutService,
                                      GuestService guestService,
-                                     RoomService roomService) {
+                                     RoomService roomService,
+                                     NotificationService notificationService,
+                                     InvoiceRepository invoiceRepository) {
         this.reservationService = reservationService;
         this.checkInOutService = checkInOutService;
         this.guestService = guestService;
         this.roomService = roomService;
+        this.notificationService = notificationService;
+        this.invoiceRepository = invoiceRepository;
     }
 
+    // status: active (default) | completed | cancelled | all; q: guest name, BH-number or room number
     @GetMapping
-    public String listReservations(Model model) {
-        addDropdownAndTableData(model);
-        return "reservations";
+    public String listReservations(@RequestParam(defaultValue = "active") String status,
+                                   @RequestParam(required = false) String q,
+                                   Model model) {
+        ReservationStatus filter = switch (status) {
+            case "completed" -> ReservationStatus.COMPLETED;
+            case "cancelled" -> ReservationStatus.CANCELLED;
+            case "all" -> null;
+            default -> ReservationStatus.ACTIVE;
+        };
+        model.addAttribute("reservations", reservationService.search(filter, q));
+        model.addAttribute("status", status);
+        model.addAttribute("q", q);
+        return "staff/reservations";
+    }
+
+    // Slide-over "New reservation" form. roomId / checkIn come pre-filled when opened from the calendar.
+    @GetMapping("/new")
+    public String newReservationForm(@RequestParam(required = false) Long roomId,
+                                     @RequestParam(required = false) Long guestId,
+                                     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
+                                     Model model) {
+        ReservationRequest form = new ReservationRequest();
+        form.setRoomId(roomId);
+        form.setGuestId(guestId);
+        LocalDate start = checkIn != null && !checkIn.isBefore(LocalDate.now()) ? checkIn : LocalDate.now();
+        form.setCheckInDate(start);
+        form.setCheckOutDate(start.plusDays(1));
+        form.setNumberOfGuests(1);
+        form.setBookingChannel(BookingChannel.IN_PERSON);
+        addFormData(model, form);
+        return NEW_DRAWER;
     }
 
     @PostMapping
-    public String createReservation(@Valid @ModelAttribute ReservationRequest request,
-                                     BindingResult bindingResult, Model model) {
+    public Object createReservation(@Valid @ModelAttribute ReservationRequest request,
+                                    BindingResult bindingResult, Model model, HttpServletResponse response) {
         if (bindingResult.hasErrors()) {
-            model.addAttribute("errorMessage", ValidationUtil.firstErrorMessage(bindingResult));
-            addDropdownAndTableData(model);
-            return SECTION_FRAGMENT;
+            return showFormError(model, request, ValidationUtil.firstErrorMessage(bindingResult), response);
         }
         try {
             Long guestId = resolveGuestId(request); // existing guest, or registers a new one inline
             Reservation reservation = reservationService.createReservation(
                     guestId, request.getRoomId(),
                     request.getCheckInDate(), request.getCheckOutDate(),
-                    request.getNumberOfGuests(), request.getBookingChannel());
-            model.addAttribute("successMessage",
-                    "Reservation #" + reservation.getId() + " created for " + reservation.getGuest().getName() + ".");
+                    request.getNumberOfGuests(), request.getBookingChannel(), request.getNotes());
+            notificationService.bookingConfirmed(reservation);
+            return Hx.done("Reservation " + reservation.getReference() + " created for "
+                    + reservation.getGuest().getName() + ".");
         } catch (IllegalArgumentException | IllegalStateException ex) {
-            model.addAttribute("errorMessage", ex.getMessage()); // e.g. DR1/DR2, or missing guest info
+            return showFormError(model, request, ex.getMessage(), response); // e.g. DR1/DR2, capacity
         }
-        addDropdownAndTableData(model);
-        return SECTION_FRAGMENT;
     }
 
-    @PutMapping("/{id}/cancel")
-    public String cancelReservation(@PathVariable Long id, Model model) {
-        reservationService.cancelReservation(id);
-        model.addAttribute("successMessage", "Reservation cancelled.");
-        addDropdownAndTableData(model);
-        return SECTION_FRAGMENT;
+    // Live "nights x price = total" + availability check inside the New reservation form.
+    @GetMapping("/quote")
+    public String quote(@RequestParam(required = false) Long roomId,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkInDate,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOutDate,
+                        @RequestParam(required = false) Integer numberOfGuests,
+                        Model model) {
+        if (roomId != null) {
+            model.addAttribute("quote", reservationService.quote(roomId, checkInDate, checkOutDate, numberOfGuests));
+        }
+        return "staff/fragments/quote :: quote";
+    }
+
+    @GetMapping("/{id}")
+    public String reservationDetail(@PathVariable Long id, Model model) {
+        addDetailData(model, reservationService.getReservation(id));
+        return DETAIL_DRAWER;
+    }
+
+    // Change dates (FR10) from the detail panel; the panel re-renders with the new values.
+    @PostMapping("/{id}/dates")
+    public String changeDates(@PathVariable Long id,
+                              @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkInDate,
+                              @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOutDate,
+                              Model model, HttpServletResponse response) {
+        Reservation reservation = reservationService.modifyReservation(id, checkInDate, checkOutDate);
+        Hx.toastAndRefresh(response, "Dates updated - now " + reservation.getNights() + " night(s).", null, null);
+        addDetailData(model, reservation);
+        return DETAIL_DRAWER;
     }
 
     @PutMapping("/{id}/checkin")
-    public String checkIn(@PathVariable Long id, Model model) {
-        try {
-            checkInOutService.checkIn(id);
-            model.addAttribute("successMessage", "Guest checked in.");
-        } catch (IllegalArgumentException | IllegalStateException ex) {
-            model.addAttribute("errorMessage", ex.getMessage()); // e.g. DR3 - missing ID
-        }
-        addDropdownAndTableData(model);
-        return SECTION_FRAGMENT;
+    public ResponseEntity<Void> checkIn(@PathVariable Long id, @RequestParam(required = false) String idOrPassport) {
+        Reservation reservation = checkInOutService.checkIn(id, idOrPassport); // DR3, DR5 checks inside
+        return Hx.done(reservation.getGuest().getName() + " checked in to room "
+                + reservation.getRoom().getRoomNumber() + ".");
     }
 
     @PutMapping("/{id}/checkout")
-    public String checkOut(@PathVariable Long id, Model model) {
-        try {
-            Invoice invoice = checkInOutService.checkOut(id);
-            model.addAttribute("successMessage", "Checked out - total charge: " + invoice.getTotalAmount());
-        } catch (IllegalArgumentException ex) {
-            model.addAttribute("errorMessage", ex.getMessage());
-        }
-        addDropdownAndTableData(model);
-        return SECTION_FRAGMENT;
+    public ResponseEntity<Void> checkOut(@PathVariable Long id) {
+        Invoice invoice = checkInOutService.checkOut(id);
+        return Hx.done("Checked out. Invoice " + invoice.getNumber() + " created.",
+                "/web/payments?open=" + invoice.getId(), "Take payment");
+    }
+
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<Void> cancelReservation(@PathVariable Long id) {
+        Reservation reservation = reservationService.cancelReservation(id);
+        notificationService.bookingCancelled(reservation);
+        return Hx.done("Reservation " + reservation.getReference() + " cancelled.");
+    }
+
+    private String showFormError(Model model, ReservationRequest request, String message, HttpServletResponse response) {
+        model.addAttribute("errorMessage", message);
+        Hx.toast(response, "error", message);
+        addFormData(model, request);
+        return NEW_DRAWER;
     }
 
     // Existing guest selected -> use that id. Dropdown left on "+ New guest" (blank) -> register
@@ -107,22 +172,25 @@ public class ReservationWebController {
         }
         Guest guest = new Guest();
         guest.setName(request.getNewGuestName());
-        // blankToNull matters here: idOrPassport is UNIQUE, and an empty string ("", which is what
-        // an empty HTML text input submits - not null) would collide on the second guest left blank.
-        guest.setIdOrPassport(blankToNull(request.getNewGuestIdOrPassport()));
-        guest.setContactNumber(blankToNull(request.getNewGuestContactNumber()));
-        return guestService.registerGuest(guest).getId();
+        guest.setIdOrPassport(request.getNewGuestIdOrPassport());
+        guest.setContactNumber(request.getNewGuestContactNumber());
+        guest.setEmail(request.getNewGuestEmail());
+        Guest saved = guestService.registerGuest(guest); // blank fields become null there
+        request.setGuestId(saved.getId()); // if the booking itself fails, the form keeps the new guest selected
+        return saved.getId();
     }
 
-    private String blankToNull(String value) {
-        return (value == null || value.isBlank()) ? null : value;
-    }
-
-    // Shared by every action: the combined fragment always needs fresh dropdown options
-    // (a newly-registered guest must appear immediately) plus the current reservation list.
-    private void addDropdownAndTableData(Model model) {
+    private void addFormData(Model model, ReservationRequest form) {
+        model.addAttribute("form", form);
         model.addAttribute("guests", guestService.getAllGuests());
-        model.addAttribute("rooms", roomService.getAvailableRooms());
-        model.addAttribute("reservations", reservationService.getAllReservations());
+        // All rooms, not only status=AVAILABLE: a room that's occupied tonight can still be booked
+        // for next week. The date-aware overlap check in ReservationService decides.
+        model.addAttribute("rooms", roomService.getAllRooms());
+        model.addAttribute("channels", BookingChannel.values());
+    }
+
+    private void addDetailData(Model model, Reservation reservation) {
+        model.addAttribute("r", reservation);
+        model.addAttribute("invoice", invoiceRepository.findByReservationId(reservation.getId()).orElse(null));
     }
 }

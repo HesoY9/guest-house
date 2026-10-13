@@ -1,0 +1,119 @@
+<!-- Slide-over: one reservation, with every action that makes sense for its current stage. -->
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="drawer" class="drawer-inner">
+    <header class="drawer-head">
+        <div>
+            <p class="eyebrow"><span th:text="${r.reference}">BH-000001</span> · <span th:text="${r.bookingChannel.label}">Online</span></p>
+            <h2 th:text="${r.guest.name}">Guest</h2>
+            <span th:replace="~{fragments/ui :: stage(${r})}"></span>
+        </div>
+        <button type="button" class="icon-btn" data-drawer-close aria-label="Close">
+            <svg th:replace="~{fragments/ui :: icon('i-x')}"></svg>
+        </button>
+    </header>
+
+    <div class="drawer-scroll">
+        <dl class="details">
+            <div><dt>Room</dt><dd th:text="${r.room.roomNumber} + ' · ' + ${r.room.type}">101</dd></div>
+            <div><dt>Guests</dt><dd th:text="${r.numberOfGuests} + ' (sleeps ' + ${r.room.capacity} + ')'">2</dd></div>
+            <div><dt>Check-in</dt><dd th:text="${@fmt.longDate(r.checkInDate)}">date</dd></div>
+            <div><dt>Check-out</dt><dd th:text="${@fmt.longDate(r.checkOutDate)}">date</dd></div>
+            <div><dt>Stay</dt><dd th:text="${@fmt.plural(r.nights, 'night', 'nights')} + ' × ' + ${@fmt.lkr(r.room.price)}">1 night</dd></div>
+            <div><dt>Total</dt><dd><strong th:text="${@fmt.lkr(r.estimatedTotal)}">LKR 0</strong></dd></div>
+            <div th:if="${r.checkedInAt != null}"><dt>Checked in</dt><dd th:text="${@fmt.dateTime(r.checkedInAt)}">time</dd></div>
+            <div th:if="${r.checkedOutAt != null}"><dt>Checked out</dt><dd th:text="${@fmt.dateTime(r.checkedOutAt)}">time</dd></div>
+            <div th:if="${r.cancelledAt != null}"><dt>Cancelled</dt><dd th:text="${@fmt.dateTime(r.cancelledAt)}">time</dd></div>
+            <div th:if="${r.createdAt != null}"><dt>Booked</dt><dd th:text="${@fmt.dateTime(r.createdAt)}">time</dd></div>
+        </dl>
+
+        <div class="note" th:if="${r.notes != null}">
+            <strong>Notes / requests</strong>
+            <p th:text="${r.notes}">Notes</p>
+        </div>
+
+        <section class="drawer-section">
+            <h3>Guest</h3>
+            <dl class="details">
+                <div><dt>Phone</dt><dd th:text="${r.guest.contactNumber} ?: '—'">phone</dd></div>
+                <div><dt>Email</dt><dd th:text="${r.guest.email} ?: '—'">email</dd></div>
+                <div><dt>ID / passport</dt>
+                    <dd th:if="${r.guest.idOrPassport != null}" th:text="${r.guest.idOrPassport}">ID</dd>
+                    <dd th:unless="${r.guest.idOrPassport != null}"><span class="badge badge-warning">Not recorded yet</span></dd>
+                </div>
+            </dl>
+            <a th:if="${allowed.contains('GUESTS')}" class="text-link" th:href="@{/web/guests/{id}(id=${r.guest.id})}">Open guest profile →</a>
+        </section>
+
+        <!-- Check in (DR3: the ID can be recorded right here if it's missing) -->
+        <section class="drawer-section action-card" th:if="${r.stage.name() == 'ARRIVING'}">
+            <h3>Check in</h3>
+            <p th:if="${r.room.status.name() == 'CLEANING_REQUIRED'}" class="form-error">
+                Room <span th:text="${r.room.roomNumber}">1</span> still needs cleaning - mark it clean before checking in.
+            </p>
+            <form class="stack" th:hx-put="@{/web/reservations/{id}/checkin(id=${r.id})}">
+                <label class="field" th:if="${r.guest.idOrPassport == null}"><span>Guest's ID / passport number</span>
+                    <input type="text" name="idOrPassport" required maxlength="30" autocomplete="off" data-autofocus>
+                </label>
+                <button type="submit" class="btn btn-primary">
+                    <svg th:replace="~{fragments/ui :: icon('i-login')}"></svg> Check in to room <span th:text="${r.room.roomNumber}">1</span>
+                </button>
+            </form>
+        </section>
+        <p class="muted" th:if="${r.stage.name() == 'UPCOMING'}">
+            Check-in opens on <span th:text="${@fmt.longDate(r.checkInDate)}">date</span>. For an early arrival, change the dates first.
+        </p>
+
+        <!-- Check out -->
+        <section class="drawer-section action-card" th:if="${r.stage.name() == 'IN_HOUSE' or r.stage.name() == 'DUE_OUT'}">
+            <h3>Check out</h3>
+            <p class="muted">Marks the room for cleaning and creates the invoice (<span th:text="${@fmt.lkr(r.estimatedTotal)}">LKR</span>).</p>
+            <button type="button" class="btn btn-primary"
+                    th:hx-put="@{/web/reservations/{id}/checkout(id=${r.id})}"
+                    th:hx-confirm="'Check out ' + ${r.guest.name} + ' from room ' + ${r.room.roomNumber} + '?'">
+                <svg th:replace="~{fragments/ui :: icon('i-logout')}"></svg> Check out
+            </button>
+        </section>
+
+        <!-- Payment -->
+        <section class="drawer-section" th:if="${allowed.contains('PAYMENTS') and r.status.name() != 'CANCELLED'}">
+            <h3>Payment</h3>
+            <th:block th:if="${invoice != null}">
+                <p class="muted">Invoice <span th:text="${invoice.number}">INV</span> - <span th:text="${@fmt.lkr(invoice.totalAmount)}">LKR</span></p>
+                <button type="button" class="btn" th:hx-get="@{/web/invoices/{id}(id=${invoice.id})}" hx-target="#drawer-body">
+                    <svg th:replace="~{fragments/ui :: icon('i-card')}"></svg> Open invoice / take payment
+                </button>
+            </th:block>
+            <th:block th:if="${invoice == null}">
+                <p class="muted">Guests pay at the property. An invoice is created automatically at check-out,
+                    or now if the guest wants to settle early.</p>
+                <button type="button" class="btn" th:if="${r.checkedIn or r.status.name() == 'COMPLETED'}"
+                        th:hx-post="@{/web/invoices/for-reservation/{id}(id=${r.id})}" hx-target="#drawer-body">
+                    <svg th:replace="~{fragments/ui :: icon('i-receipt')}"></svg> Create invoice now
+                </button>
+            </th:block>
+        </section>
+
+        <!-- Change dates (FR10) -->
+        <section class="drawer-section" th:if="${r.status.name() == 'ACTIVE'}">
+            <h3>Change dates</h3>
+            <form class="stack" th:hx-post="@{/web/reservations/{id}/dates(id=${r.id})}" hx-target="#drawer-body">
+                <div class="field-row">
+                    <label class="field"><span>Check-in</span>
+                        <input type="date" name="checkInDate" th:value="${r.checkInDate}" th:readonly="${r.checkedIn}" required data-checkin>
+                    </label>
+                    <label class="field"><span>Check-out</span>
+                        <input type="date" name="checkOutDate" th:value="${r.checkOutDate}" required data-checkout>
+                    </label>
+                </div>
+                <button type="submit" class="btn">Save new dates</button>
+            </form>
+        </section>
+    </div>
+
+    <footer class="drawer-foot">
+        <button type="button" class="btn btn-danger-ghost" th:if="${r.status.name() == 'ACTIVE' and !r.checkedIn}"
+                th:hx-put="@{/web/reservations/{id}/cancel(id=${r.id})}"
+                th:hx-confirm="'Cancel reservation ' + ${r.reference} + ' for ' + ${r.guest.name} + '?'">Cancel reservation</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn" data-drawer-close>Close</button>
+    </footer>
+</div>

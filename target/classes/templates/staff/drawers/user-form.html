@@ -1,0 +1,34 @@
+<!-- Slide-over: create a staff account (FR33). -->
+<form xmlns:th="http://www.thymeleaf.org" th:fragment="drawer" class="drawer-inner"
+      th:hx-post="@{/web/users}" hx-target="#drawer-body">
+    <header class="drawer-head">
+        <div>
+            <p class="eyebrow">Staff accounts</p>
+            <h2>New account</h2>
+        </div>
+        <button type="button" class="icon-btn" data-drawer-close aria-label="Close">
+            <svg th:replace="~{fragments/ui :: icon('i-x')}"></svg>
+        </button>
+    </header>
+    <div class="drawer-scroll">
+        <p th:if="${errorMessage}" class="form-error" th:text="${errorMessage}">Error</p>
+        <label class="field"><span>Username</span>
+            <input type="text" name="username" th:value="${form?.username}" required maxlength="50" autocomplete="off" data-autofocus>
+        </label>
+        <label class="field"><span>Temporary password</span>
+            <input type="password" name="password" required minlength="8" autocomplete="new-password">
+            <small class="hint">At least 8 characters. Share it with them privately.</small>
+        </label>
+        <label class="field"><span>Role</span>
+            <select name="role" required>
+                <option th:each="r : ${roles}" th:value="${r.name()}" th:text="${r.label}"
+                        th:selected="${form != null and form.role == r}">Role</option>
+            </select>
+            <small class="hint">The role decides which pages they see - see the table on the Staff accounts page.</small>
+        </label>
+    </div>
+    <footer class="drawer-foot">
+        <button type="button" class="btn" data-drawer-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Create account</button>
+    </footer>
+</form>

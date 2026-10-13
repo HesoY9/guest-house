@@ -1,0 +1,21 @@
+<!-- Dates + guests search box, used in the home page hero and at the top of the results page. -->
+<form xmlns:th="http://www.thymeleaf.org" th:fragment="bar(search)" class="search-card" th:action="@{/rooms}" method="get">
+    <label class="search-field">
+        <span>Check-in</span>
+        <input type="date" name="checkIn" th:value="${search.checkIn}" th:min="${today}" data-checkin required>
+    </label>
+    <label class="search-field">
+        <span>Check-out</span>
+        <input type="date" name="checkOut" th:value="${search.checkOut}" th:min="${today.plusDays(1)}" data-checkout required>
+    </label>
+    <label class="search-field search-field-sm">
+        <span>Guests</span>
+        <select name="guests">
+            <option th:each="n : ${#numbers.sequence(1, 8)}" th:value="${n}" th:text="${n}"
+                    th:selected="${search.guests == n or (search.guests == null and n == 2)}">2</option>
+        </select>
+    </label>
+    <button type="submit" class="btn btn-coral search-submit">
+        <svg th:replace="~{fragments/ui :: icon('i-search')}"></svg> <span>Search</span>
+    </button>
+</form>
