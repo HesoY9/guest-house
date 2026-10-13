@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{staff/layout :: layout(title='Room calendar', section='CALENDAR', content=~{::content})}">
+<body>
+<!-- The "tape chart": one row per room, one column per night, a bar per stay.
+     Click an empty cell to book that room from that date; click a bar to open the reservation. -->
+<div th:fragment="content" id="calendar-page" class="page page-fill"
+     th:hx-get="${currentUrl}" hx-trigger="dataChanged from:body" hx-select="#calendar-page" hx-swap="outerHTML">
+
+    <div class="toolbar">
+        <div class="btn-group">
+            <a class="btn btn-sm" th:href="@{/web/calendar(start=${cal.previous()},days=${cal.days()})}" title="Earlier">
+                <svg th:replace="~{fragments/ui :: icon('i-chevron-left')}"></svg>
+            </a>
+            <a class="btn btn-sm" th:href="@{/web/calendar(days=${cal.days()})}">Today</a>
+            <a class="btn btn-sm" th:href="@{/web/calendar(start=${cal.next()},days=${cal.days()})}" title="Later">
+                <svg th:replace="~{fragments/ui :: icon('i-chevron-right')}"></svg>
+            </a>
+        </div>
+        <strong class="toolbar-title" th:text="${@fmt.date(cal.start())} + ' – ' + ${@fmt.date(cal.end())}">Dates</strong>
+        <div class="segmented">
+            <a th:href="@{/web/calendar(start=${cal.start()},days=7)}" th:classappend="${cal.days() == 7} ? 'on'">Week</a>
+            <a th:href="@{/web/calendar(start=${cal.start()},days=14)}" th:classappend="${cal.days() == 14} ? 'on'">2 weeks</a>
+            <a th:href="@{/web/calendar(start=${cal.start()},days=30)}" th:classappend="${cal.days() == 30} ? 'on'">Month</a>
+        </div>
+        <span class="spacer"></span>
+        <ul class="legend">
+            <li><i class="sw stage-upcoming"></i>Upcoming</li>
+            <li><i class="sw stage-arriving"></i>Arriving</li>
+            <li><i class="sw stage-in_house"></i>In house</li>
+            <li><i class="sw stage-due_out"></i>Due out</li>
+            <li><i class="sw stage-completed"></i>Completed</li>
+            <li><i class="sw stage-no_show"></i>No-show</li>
+        </ul>
+    </div>
+
+    <div class="panel tape-wrap">
+        <p th:if="${cal.rows().isEmpty()}" class="empty">No rooms yet - add some on the Rooms page.</p>
+        <div class="tape" th:unless="${cal.rows().isEmpty()}" th:style="'--days:' + ${cal.days()}">
+            <div class="tape-row tape-header">
+                <div class="tape-room tape-corner">Room</div>
+                <div th:each="d, st : ${cal.dates()}" class="tape-day"
+                     th:style="'grid-column:' + ${st.index + 2}"
+                     th:classappend="${d.equals(today)} ? 'is-today' : (${d.dayOfWeek.value >= 6} ? 'is-weekend' : '')">
+                    <span th:text="${@fmt.dayName(d)}">Mon</span>
+                    <strong th:text="${d.dayOfMonth}">1</strong>
+                    <span class="month" th:if="${st.index == 0 or d.dayOfMonth == 1}" th:text="${@fmt.month(d)}">Jan</span>
+                </div>
+            </div>
+
+            <div class="tape-row" th:each="row : ${cal.rows()}">
+                <div class="tape-room">
+                    <strong th:text="${row.room().roomNumber}">101</strong>
+                    <span th:text="${row.room().type}">Double</span>
+                    <i class="room-dot" th:classappend="'dot-' + ${#strings.toLowerCase(row.room().status.name())}" th:title="${row.room().status.label}"></i>
+                </div>
+                <th:block th:each="d, st : ${cal.dates()}">
+                    <button th:if="${!d.isBefore(today)}" type="button" class="tape-cell"
+                            th:style="'grid-column:' + ${st.index + 2}"
+                            th:classappend="${d.equals(today)} ? 'is-today' : (${d.dayOfWeek.value >= 6} ? 'is-weekend' : '')"
+                            th:hx-get="@{/web/reservations/new(roomId=${row.room().id},checkIn=${d})}" hx-target="#drawer-body"
+                            th:with="label=${'Book room ' + row.room().roomNumber + ' from ' + @fmt.date(d)}"
+                            th:title="${label}" th:aria-label="${label}"></button>
+                    <div th:unless="${!d.isBefore(today)}" class="tape-cell is-past" th:style="'grid-column:' + ${st.index + 2}"></div>
+                </th:block>
+                <button th:each="bar : ${row.bars()}" type="button" class="tape-bar"
+                        th:classappend="'stage-' + ${#strings.toLowerCase(bar.reservation().stage.name())} + (${bar.continuesBefore()} ? ' cut-start' : '') + (${bar.continuesAfter()} ? ' cut-end' : '')"
+                        th:style="'grid-column:' + ${bar.column()} + ' / span ' + ${bar.span()}"
+                        th:hx-get="@{/web/reservations/{id}(id=${bar.reservation().id})}" hx-target="#drawer-body"
+                        th:title="${bar.reservation().guest.name} + ' · ' + ${@fmt.shortDate(bar.reservation().checkInDate)} + ' → ' + ${@fmt.shortDate(bar.reservation().checkOutDate)} + ' · ' + ${bar.reservation().stage.label}">
+                    <span class="bar-name" th:text="${bar.reservation().guest.name}">Guest</span>
+                    <span class="bar-meta" th:text="${bar.reservation().numberOfGuests} + 'p'">2p</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

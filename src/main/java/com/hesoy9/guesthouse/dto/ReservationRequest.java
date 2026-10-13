@@ -3,6 +3,8 @@ package com.hesoy9.guesthouse.dto;
 import com.hesoy9.guesthouse.entity.BookingChannel;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
@@ -17,14 +19,17 @@ public class ReservationRequest {
     private String newGuestIdOrPassport;
     private String newGuestName;
     private String newGuestContactNumber;
+    private String newGuestEmail;
 
     @NotNull(message = "Room is required")
     private Long roomId;
 
     @NotNull(message = "Check-in date is required")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate checkInDate;
 
     @NotNull(message = "Check-out date is required")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate checkOutDate;
 
     @NotNull(message = "Number of guests is required")
@@ -33,6 +38,9 @@ public class ReservationRequest {
 
     @NotNull(message = "Booking channel is required")
     private BookingChannel bookingChannel;
+
+    @Size(max = 500, message = "Notes can be at most 500 characters")
+    private String notes;
 
     public Long getGuestId() { return guestId; }
     public void setGuestId(Long guestId) { this.guestId = guestId; }
@@ -45,6 +53,9 @@ public class ReservationRequest {
 
     public String getNewGuestContactNumber() { return newGuestContactNumber; }
     public void setNewGuestContactNumber(String newGuestContactNumber) { this.newGuestContactNumber = newGuestContactNumber; }
+
+    public String getNewGuestEmail() { return newGuestEmail; }
+    public void setNewGuestEmail(String newGuestEmail) { this.newGuestEmail = newGuestEmail; }
 
     public Long getRoomId() { return roomId; }
     public void setRoomId(Long roomId) { this.roomId = roomId; }
@@ -60,4 +71,7 @@ public class ReservationRequest {
 
     public BookingChannel getBookingChannel() { return bookingChannel; }
     public void setBookingChannel(BookingChannel bookingChannel) { this.bookingChannel = bookingChannel; }
+
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
 }

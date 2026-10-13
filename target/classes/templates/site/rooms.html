@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{site/layout :: layout(title='Rooms', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <section class="results-top">
+        <div class="container">
+            <div th:replace="~{site/fragments/search-bar :: bar(${search})}"></div>
+        </div>
+    </section>
+
+    <div class="container results-layout">
+        <!-- Filters. Plain GET form, so it works without JavaScript; with HTMX it swaps only the results. -->
+        <form id="filters" class="filters" th:action="@{/rooms}" method="get"
+              th:hx-get="@{/rooms}" hx-target="#results" hx-select="#results" hx-swap="outerHTML"
+              hx-push-url="true" hx-trigger="change">
+            <input type="hidden" name="checkIn" th:value="${search.checkIn}">
+            <input type="hidden" name="checkOut" th:value="${search.checkOut}">
+            <input type="hidden" name="guests" th:value="${search.guests}">
+            <details class="filters-box" open>
+                <summary><svg th:replace="~{fragments/ui :: icon('i-filter')}"></svg> Filters</summary>
+                <div class="filter-group">
+                    <h3>Sort by</h3>
+                    <select name="sort" aria-label="Sort by">
+                        <option value="recommended" th:selected="${search.sort == 'recommended'}">Recommended</option>
+                        <option value="price-asc" th:selected="${search.sort == 'price-asc'}">Price: low to high</option>
+                        <option value="price-desc" th:selected="${search.sort == 'price-desc'}">Price: high to low</option>
+                        <option value="capacity" th:selected="${search.sort == 'capacity'}">Most space</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <h3>Max price per night</h3>
+                    <select name="maxPrice" aria-label="Maximum price per night">
+                        <option value="" th:selected="${search.maxPrice == null}">Any price</option>
+                        <option th:each="p : ${ {5000, 10000, 15000, 20000, 30000, 50000} }" th:value="${p}"
+                                th:selected="${search.maxPrice != null and search.maxPrice == p}"
+                                th:text="'Up to ' + ${@fmt.lkr(p)}">Up to</option>
+                    </select>
+                </div>
+                <div class="filter-group" th:unless="${roomTypes.isEmpty()}">
+                    <h3>Room type</h3>
+                    <label th:each="t : ${roomTypes}" class="check">
+                        <input type="checkbox" name="type" th:value="${t}" th:checked="${search.type.contains(t)}">
+                        <span th:text="${t}">Double</span>
+                    </label>
+                </div>
+                <div class="filter-group">
+                    <h3>Amenities</h3>
+                    <label th:each="a : ${amenities}" class="check">
+                        <input type="checkbox" name="amenity" th:value="${a.name()}" th:checked="${search.amenity.contains(a)}">
+                        <span th:text="${a.label}">Wi-Fi</span>
+                    </label>
+                </div>
+                <noscript><button type="submit" class="btn btn-primary btn-block">Apply filters</button></noscript>
+                <a th:href="${search.hasDates()} ? @{/rooms(checkIn=${search.checkIn},checkOut=${search.checkOut},guests=${search.guests})} : @{/rooms}" class="text-link small">Clear filters</a>
+            </details>
+        </form>
+
+        <section id="results" class="results" aria-live="polite">
+            <div class="results-head">
+                <h1 th:if="${search.hasDates()}">
+                    <span th:text="${@fmt.plural(rooms.size(), 'room', 'rooms')}">0 rooms</span> available
+                </h1>
+                <h1 th:unless="${search.hasDates()}">All rooms</h1>
+                <p class="muted" th:if="${search.hasDates()}"
+                   th:text="${@fmt.longDate(search.checkIn)} + ' → ' + ${@fmt.longDate(search.checkOut)} + ' · ' + ${@fmt.plural(nights, 'night', 'nights')} + (${search.guests != null} ? ' · ' + ${@fmt.plural(search.guests, 'guest', 'guests')} : '')">dates</p>
+                <p class="muted" th:unless="${search.hasDates()}">Add your dates above to see which rooms are free and the total price.</p>
+                <p th:if="${dateProblem}" class="notice notice-error" th:text="${dateProblem}">problem</p>
+            </div>
+
+            <div th:if="${rooms.isEmpty()}" class="empty-state">
+                <svg th:replace="~{fragments/ui :: icon('i-calendar')}"></svg>
+                <h2>No rooms match</h2>
+                <p>Try different dates, fewer guests, or clear some filters.</p>
+            </div>
+
+            <div class="room-grid room-grid-2">
+                <th:block th:each="room : ${rooms}">
+                    <article th:replace="~{site/fragments/room-card :: card(${room}, ${search}, ${nights})}"></article>
+                </th:block>
+            </div>
+        </section>
+    </div>
+</th:block>
+</body>
+</html>

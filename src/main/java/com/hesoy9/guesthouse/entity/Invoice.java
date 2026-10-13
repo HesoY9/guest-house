@@ -59,4 +59,9 @@ public class Invoice {
     public void setGeneratedDate(LocalDate generatedDate) {
         this.generatedDate = generatedDate;
     }
+
+    // Invoice number printed on the invoice, e.g. "INV-000008".
+    public String getNumber() {
+        return id == null ? "" : String.format("INV-%06d", id);
+    }
 }

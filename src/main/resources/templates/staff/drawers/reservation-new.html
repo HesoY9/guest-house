@@ -1,0 +1,89 @@
+<!-- Slide-over: create a reservation (FR5). Pick an existing guest or register a new one inline. -->
+<form xmlns:th="http://www.thymeleaf.org" th:fragment="drawer" class="drawer-inner"
+      th:hx-post="@{/web/reservations}" hx-target="#drawer-body">
+    <header class="drawer-head">
+        <div>
+            <p class="eyebrow">Reservations</p>
+            <h2>New reservation</h2>
+        </div>
+        <button type="button" class="icon-btn" data-drawer-close aria-label="Close">
+            <svg th:replace="~{fragments/ui :: icon('i-x')}"></svg>
+        </button>
+    </header>
+
+    <div class="drawer-scroll">
+        <p th:if="${errorMessage}" class="form-error" th:text="${errorMessage}">Error</p>
+
+        <fieldset class="fieldset guest-picker">
+            <legend>Guest</legend>
+            <label class="field">
+                <span>Existing guest</span>
+                <select name="guestId" data-autofocus>
+                    <option value="" th:selected="${form.guestId == null}">+ New guest (fill in below)</option>
+                    <option th:each="g : ${guests}" th:value="${g.id}" th:selected="${form.guestId == g.id}"
+                            th:text="${g.name} + (${g.contactNumber != null} ? ' · ' + ${g.contactNumber} : '')">Guest</option>
+                </select>
+            </label>
+            <!-- Shown only while "+ New guest" is selected (CSS :has in staff.css) -->
+            <div class="new-guest">
+                <label class="field"><span>Full name</span>
+                    <input type="text" name="newGuestName" th:value="${form.newGuestName}" maxlength="100" autocomplete="off">
+                </label>
+                <div class="field-row">
+                    <label class="field"><span>Contact number</span>
+                        <input type="tel" name="newGuestContactNumber" th:value="${form.newGuestContactNumber}" maxlength="20" autocomplete="off">
+                    </label>
+                    <label class="field"><span>ID / passport <em>(needed at check-in)</em></span>
+                        <input type="text" name="newGuestIdOrPassport" th:value="${form.newGuestIdOrPassport}" maxlength="30" autocomplete="off">
+                    </label>
+                </div>
+                <label class="field"><span>Email <em>(optional - for the confirmation email)</em></span>
+                    <input type="email" name="newGuestEmail" th:value="${form.newGuestEmail}" maxlength="150" autocomplete="off">
+                </label>
+            </div>
+        </fieldset>
+
+        <fieldset class="fieldset">
+            <legend>Stay</legend>
+            <label class="field"><span>Room</span>
+                <select name="roomId" required>
+                    <option value="" th:selected="${form.roomId == null}" disabled>Choose a room</option>
+                    <option th:each="room : ${rooms}" th:value="${room.id}" th:selected="${form.roomId == room.id}"
+                            th:text="${room.roomNumber} + ' · ' + ${room.type} + ' · sleeps ' + ${room.capacity} + ' · ' + ${@fmt.lkr(room.price)}">Room</option>
+                </select>
+            </label>
+            <div class="field-row">
+                <label class="field"><span>Check-in</span>
+                    <input type="date" name="checkInDate" th:value="${form.checkInDate}" th:min="${today}" required data-checkin>
+                </label>
+                <label class="field"><span>Check-out</span>
+                    <input type="date" name="checkOutDate" th:value="${form.checkOutDate}" th:min="${today.plusDays(1)}" required data-checkout>
+                </label>
+            </div>
+            <div class="field-row">
+                <label class="field"><span>Guests</span>
+                    <input type="number" name="numberOfGuests" th:value="${form.numberOfGuests}" min="1" max="20" required>
+                </label>
+                <label class="field"><span>Booked via</span>
+                    <select name="bookingChannel" required>
+                        <option th:each="c : ${channels}" th:value="${c.name()}" th:selected="${form.bookingChannel == c}" th:text="${c.label}">Walk-in</option>
+                    </select>
+                </label>
+            </div>
+            <label class="field"><span>Notes <em>(optional)</em></span>
+                <textarea name="notes" rows="2" maxlength="500" th:text="${form.notes}"></textarea>
+            </label>
+        </fieldset>
+
+        <!-- Live "nights × price = total" and availability, refreshed whenever the form changes -->
+        <div class="quote-box" th:hx-get="@{/web/reservations/quote}" hx-include="closest form"
+             hx-trigger="load, change from:closest form" hx-swap="innerHTML">
+            <p class="muted">Checking…</p>
+        </div>
+    </div>
+
+    <footer class="drawer-foot">
+        <button type="button" class="btn" data-drawer-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Create reservation</button>
+    </footer>
+</form>

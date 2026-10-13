@@ -25,6 +25,10 @@ public class Payment {
     @Column(name = "payment_date", nullable = false)
     private LocalDate paymentDate;
 
+    // Staff username that took the payment - shown on the receipt and in the daily report.
+    @Column(name = "received_by", length = 50)
+    private String receivedBy;
+
     public Payment() {
         // required by JPA
     }
@@ -70,5 +74,18 @@ public class Payment {
 
     public void setPaymentDate(LocalDate paymentDate) {
         this.paymentDate = paymentDate;
+    }
+
+    public String getReceivedBy() {
+        return receivedBy;
+    }
+
+    public void setReceivedBy(String receivedBy) {
+        this.receivedBy = receivedBy;
+    }
+
+    // Receipt number printed on the receipt (DR4), e.g. "RC-000017".
+    public String getReceiptNumber() {
+        return id == null ? "" : String.format("RC-%06d", id);
     }
 }

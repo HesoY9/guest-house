@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{site/layout :: layout(title=${room.type} + ' Room ' + ${room.roomNumber}, content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <div class="container room-page">
+        <a th:href="${checkIn != null and checkOut != null} ? @{/rooms(checkIn=${checkIn},checkOut=${checkOut},guests=${guests})} : @{/rooms}" class="back-link">
+            <svg th:replace="~{fragments/ui :: icon('i-chevron-left')}"></svg> All rooms
+        </a>
+
+        <header class="room-title">
+            <h1 th:text="${room.type} + ' Room'">Double Room</h1>
+            <p class="muted">
+                Room <span th:text="${room.roomNumber}">101</span> ·
+                Sleeps <span th:text="${room.capacity}">2</span> ·
+                <span th:text="${@fmt.lkr(room.price)}">LKR</span> per night
+            </p>
+        </header>
+
+        <!-- Gallery: mosaic on desktop, swipeable strip on phones; tap any photo to open full-screen. -->
+        <section class="gallery" th:classappend="'gallery-' + ${room.photos.size() > 4 ? 5 : room.photos.size()}" th:unless="${room.photos.isEmpty()}">
+            <button th:each="p, st : ${room.photos}" type="button" class="gallery-item" th:if="${st.index < 5}"
+                    th:attr="data-gallery-open=${st.index}" th:aria-label="'Open photo ' + ${st.count}">
+                <img th:src="${p.src}" th:alt="${room.type} + ' room, photo ' + ${st.count}" th:loading="${st.first} ? 'eager' : 'lazy'">
+            </button>
+            <button type="button" class="gallery-all btn btn-light btn-sm" th:if="${room.photos.size() > 1}" data-gallery-open="0">
+                <svg th:replace="~{fragments/ui :: icon('i-image')}"></svg>
+                Show all <span th:text="${room.photos.size()}">5</span> photos
+            </button>
+        </section>
+        <div class="gallery-strip" th:unless="${room.photos.isEmpty()}">
+            <img th:each="p, st : ${room.photos}" th:src="${p.src}" th:alt="${room.type} + ' room, photo ' + ${st.count}"
+                 loading="lazy" th:attr="data-gallery-open=${st.index}">
+        </div>
+        <div th:if="${room.photos.isEmpty()}" class="photo-placeholder photo-placeholder-lg">
+            <svg th:replace="~{fragments/ui :: icon('i-waves')}"></svg>
+            <span>Photos coming soon</span>
+        </div>
+
+        <div class="room-body">
+            <div class="room-info">
+                <section class="room-section">
+                    <ul class="fact-list">
+                        <li><svg th:replace="~{fragments/ui :: icon('i-users')}"></svg>
+                            <div><strong th:text="'Up to ' + ${@fmt.plural(room.capacity, 'guest', 'guests')}">Up to 2 guests</strong><span>Maximum occupancy</span></div></li>
+                        <li><svg th:replace="~{fragments/ui :: icon('i-wallet')}"></svg>
+                            <div><strong>Pay at the property</strong><span>Cash or card, no online payment</span></div></li>
+                        <li><svg th:replace="~{fragments/ui :: icon('i-undo')}"></svg>
+                            <div><strong>Cancel online</strong><span>Any time before check-in, from My bookings</span></div></li>
+                    </ul>
+                </section>
+                <section class="room-section" th:if="${room.description != null}">
+                    <h2>About this room</h2>
+                    <p class="room-description" th:text="${room.description}">Description</p>
+                </section>
+                <section class="room-section">
+                    <h2>Amenities</h2>
+                    <p th:if="${room.amenities.isEmpty()}" class="muted">Ask us about this room's amenities.</p>
+                    <ul class="amenity-list" th:unless="${room.amenities.isEmpty()}">
+                        <li th:each="a : ${room.sortedAmenities}">
+                            <svg th:replace="~{fragments/ui :: icon('i-check')}"></svg><span th:text="${a.label}">Wi-Fi</span>
+                        </li>
+                    </ul>
+                </section>
+                <section class="room-section">
+                    <h2>Good to know</h2>
+                    <ul class="plain-list">
+                        <li>Please bring your ID or passport - we need it at check-in.</li>
+                        <li>You'll need a Google account to book, so you can manage your booking online.</li>
+                    </ul>
+                </section>
+            </div>
+
+            <!-- Booking box: dates + guests, live price summary, then on to the booking page -->
+            <aside class="book-box" id="book">
+                <div class="book-box-price"><strong th:text="${@fmt.lkr(room.price)}">LKR</strong> <span>/ night</span></div>
+                <form th:action="@{/book/{id}(id=${room.id})}" method="get" class="book-form">
+                    <div class="date-pair">
+                        <label><span>Check-in</span>
+                            <input type="date" name="checkIn" th:value="${checkIn}" th:min="${today}" required data-checkin>
+                        </label>
+                        <label><span>Check-out</span>
+                            <input type="date" name="checkOut" th:value="${checkOut}" th:min="${today.plusDays(1)}" required data-checkout>
+                        </label>
+                    </div>
+                    <label class="guests-field"><span>Guests</span>
+                        <select name="guests">
+                            <option th:each="n : ${#numbers.sequence(1, room.capacity)}" th:value="${n}" th:text="${@fmt.plural(n, 'guest', 'guests')}"
+                                    th:selected="${n == guests}">1 guest</option>
+                        </select>
+                    </label>
+                    <div class="quote-slot" th:hx-get="@{/rooms/{id}/quote(id=${room.id})}" hx-include="closest form"
+                         hx-trigger="change from:closest form" hx-swap="innerHTML">
+                        <th:block th:if="${quote != null}"><div th:replace="~{site/fragments/quote :: quote}"></div></th:block>
+                        <p th:if="${quote == null}" class="muted small">Choose dates to see the total price.</p>
+                    </div>
+                    <button type="submit" class="btn btn-coral btn-block btn-lg">Reserve</button>
+                    <p class="fine-print">You won't be charged yet.</p>
+                </form>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Phones: price + button pinned to the bottom of the screen -->
+    <div class="mobile-book-bar">
+        <div><strong th:text="${@fmt.lkr(room.price)}">LKR</strong> <span>/ night</span></div>
+        <a href="#book" class="btn btn-coral">Check availability</a>
+    </div>
+
+    <!-- Full-screen photo viewer -->
+    <dialog class="lightbox" id="lightbox" th:unless="${room.photos.isEmpty()}" aria-label="Room photos">
+        <button type="button" class="lightbox-close" data-lightbox-close aria-label="Close photos">
+            <svg th:replace="~{fragments/ui :: icon('i-x')}"></svg>
+        </button>
+        <div class="lightbox-scroll">
+            <img th:each="p, st : ${room.photos}" th:src="${p.src}" th:alt="${room.type} + ' room, photo ' + ${st.count}"
+                 loading="lazy" th:attr="data-index=${st.index}">
+        </div>
+    </dialog>
+</th:block>
+</body>
+</html>

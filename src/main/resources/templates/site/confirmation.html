@@ -1,26 +1,50 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Booking Confirmed - Hesoy9 Guest House</title>
-    <link rel="stylesheet" th:href="@{/css/site.css}">
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{site/layout :: layout(title='Booking confirmed', content=~{::content})}">
 <body>
-<div th:replace="~{site/fragments/site-nav :: nav}"></div>
+<th:block th:fragment="content" th:with="r=${reservation}">
+    <div class="container narrow confirm-page">
+        <div class="confirm-hero">
+            <span class="confirm-icon"><svg th:replace="~{fragments/ui :: icon('i-check')}"></svg></span>
+            <h1>You're booked!</h1>
+            <p>Booking reference <strong class="ref" th:text="${r.reference}">BH-000001</strong></p>
+        </div>
 
-<main class="container confirmation-page">
-    <h1>Booking Confirmed</h1>
-    <p>Thanks - your reservation is booked. Bring ID at check-in.</p>
+        <section class="card confirm-card">
+            <div class="summary-room">
+                <img th:if="${r.room.coverPhotoUrl != null}" th:src="${r.room.coverPhotoSrc}" alt="">
+                <div th:unless="${r.room.coverPhotoUrl != null}" class="photo-placeholder"><svg th:replace="~{fragments/ui :: icon('i-waves')}"></svg></div>
+                <div>
+                    <strong th:text="${r.room.type} + ' Room'">Room</strong>
+                    <span class="muted small" th:text="'Room ' + ${r.room.roomNumber}">Room</span>
+                </div>
+            </div>
+            <dl class="kv-list">
+                <div><dt>Check-in</dt><dd th:text="${@fmt.longDate(r.checkInDate)}">date</dd></div>
+                <div><dt>Check-out</dt><dd th:text="${@fmt.longDate(r.checkOutDate)}">date</dd></div>
+                <div><dt>Guests</dt><dd th:text="${r.numberOfGuests}">2</dd></div>
+                <div><dt>Price</dt><dd th:text="${@fmt.lkr(r.room.price)} + ' × ' + ${@fmt.plural(r.nights, 'night', 'nights')}">price</dd></div>
+                <div class="kv-total"><dt>Total, paid at the property</dt><dd th:text="${@fmt.lkr(r.estimatedTotal)}">LKR</dd></div>
+            </dl>
+        </section>
 
-    <table>
-        <tr><th>Reservation #</th><td th:text="${reservation.id}"></td></tr>
-        <tr><th>Room</th><td th:text="${reservation.room.roomNumber}"></td></tr>
-        <tr><th>Check-in</th><td th:text="${reservation.checkInDate}"></td></tr>
-        <tr><th>Check-out</th><td th:text="${reservation.checkOutDate}"></td></tr>
-        <tr><th>Status</th><td th:text="${reservation.status}"></td></tr>
-    </table>
+        <section class="card next-steps">
+            <h2>What happens next</h2>
+            <ol>
+                <li th:if="${emailSent}">We've emailed a confirmation to <strong th:text="${r.guest.email}">email</strong>.</li>
+                <li>Bring your ID or passport for check-in.</li>
+                <li>Pay at the property by cash or card - nothing has been charged.</li>
+                <li>Need to cancel? Do it from <a th:href="@{/my-bookings}">My bookings</a> any time before check-in.</li>
+            </ol>
+        </section>
 
-    <a th:href="@{/my-bookings}" class="btn-book">View My Bookings</a>
-</main>
+        <div class="confirm-actions">
+            <a th:href="@{/my-bookings/{id}(id=${r.id})}" class="btn btn-primary">
+                <svg th:replace="~{fragments/ui :: icon('i-printer')}"></svg> View &amp; print confirmation
+            </a>
+            <a th:href="@{/my-bookings}" class="btn btn-outline">My bookings</a>
+        </div>
+    </div>
+</th:block>
 </body>
 </html>

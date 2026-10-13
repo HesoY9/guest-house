@@ -1,15 +1,29 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<!-- Spring Boot's fallback error page (403 / 404 / 500...). Never shows technical details. -->
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Something went wrong - Guest House</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Beachside Heaven</title>
+    <link rel="icon" th:href="@{/img/favicon.svg}" type="image/svg+xml">
+    <link rel="stylesheet" th:href="@{/css/site.css}">
 </head>
 <body>
-<main class="container">
-    <h1>Something went wrong</h1>
-    <p>Sorry, that didn't work. Please go back and try again.</p>
-    <a th:href="@{/web/rooms}" class="link-button">Return to Rooms</a>
+<main class="message-page">
+    <div class="message-card">
+        <p class="eyebrow" th:text="${status}">404</p>
+        <h1 th:switch="${status}">
+            <span th:case="403">You don't have access to this page</span>
+            <span th:case="404">We couldn't find that page</span>
+            <span th:case="*">Something went wrong</span>
+        </h1>
+        <p th:if="${status == 403}">If you think you should, ask a manager to check your account's role.</p>
+        <p th:unless="${status == 403}">Sorry about that. Please go back and try again.</p>
+        <div class="message-actions">
+            <a class="btn btn-primary" th:href="@{/}">Go to the homepage</a>
+            <a class="btn btn-ghost" th:href="@{/web}">Staff portal</a>
+        </div>
+    </div>
 </main>
 </body>
 </html>

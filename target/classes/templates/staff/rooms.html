@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{staff/layout :: layout(title='Rooms', section='ROOMS', content=~{::content})}">
+<body>
+<div th:fragment="content" class="page page-fill">
+    <div class="toolbar">
+        <span class="toolbar-title" th:text="${@fmt.plural(rooms.size(), 'room', 'rooms')}">0 rooms</span>
+        <span class="spacer"></span>
+        <a class="btn" th:href="@{/}" target="_blank" rel="noopener">Preview on website</a>
+        <button type="button" class="btn btn-primary" th:hx-get="@{/web/rooms/new}" hx-target="#drawer-body">
+            <svg th:replace="~{fragments/ui :: icon('i-plus')}"></svg> Add room
+        </button>
+    </div>
+
+    <div id="room-list" class="panel table-panel"
+         th:hx-get="${currentUrl}" hx-trigger="dataChanged from:body" hx-select="#room-list" hx-swap="outerHTML">
+        <table class="table">
+            <thead>
+            <tr><th class="thumb-col"><span class="sr-only">Photo</span></th><th>Room</th><th>Type</th><th class="num">Sleeps</th>
+                <th class="num">Price / night</th><th>Amenities</th><th>Status</th><th class="actions-col"><span class="sr-only">Actions</span></th></tr>
+            </thead>
+            <tbody>
+            <tr th:if="${rooms.isEmpty()}"><td colspan="8" class="empty">No rooms yet - add the first one.</td></tr>
+            <tr th:each="room : ${rooms}" class="row-link" th:attr="data-drawer-url=@{/web/rooms/{id}/edit(id=${room.id})}">
+                <td class="thumb-col">
+                    <img th:if="${room.coverPhotoUrl != null}" th:src="${room.coverPhotoSrc}" alt="" class="thumb" loading="lazy">
+                    <span th:unless="${room.coverPhotoUrl != null}" class="thumb thumb-empty" title="No photos yet">
+                        <svg th:replace="~{fragments/ui :: icon('i-image')}"></svg>
+                    </span>
+                </td>
+                <td>
+                    <strong th:text="${room.roomNumber}">101</strong>
+                    <span class="muted small" th:text="${@fmt.plural(room.photos.size(), 'photo', 'photos')}">0 photos</span>
+                </td>
+                <td th:text="${room.type}">Double</td>
+                <td class="num" th:text="${room.capacity}">2</td>
+                <td class="num" th:text="${@fmt.lkr(room.price)}">LKR</td>
+                <td class="amenity-cell">
+                    <span th:each="a, st : ${room.sortedAmenities}" th:if="${st.index < 3}" class="chip" th:text="${a.label}">Wi-Fi</span>
+                    <span th:if="${room.amenities.size() > 3}" class="chip chip-more" th:text="'+' + ${room.amenities.size() - 3}">+2</span>
+                    <span th:if="${room.amenities.isEmpty()}" class="muted">—</span>
+                </td>
+                <td><span th:replace="~{fragments/ui :: roomStatus(${room.status})}"></span></td>
+                <td class="actions-col">
+                    <button type="button" class="btn btn-xs" th:hx-get="@{/web/rooms/{id}/edit(id=${room.id})}" hx-target="#drawer-body">Edit</button>
+                    <button type="button" class="btn btn-xs btn-danger-ghost" th:hx-delete="@{/web/rooms/{id}(id=${room.id})}"
+                            th:hx-confirm="'Delete room ' + ${room.roomNumber} + '? This can\'t be undone.'">Delete</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

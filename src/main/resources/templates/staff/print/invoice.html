@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<!-- Printable invoice (FR19). Opens in a new tab; the Print button is hidden on paper. -->
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:with="inv=${summary.invoice()}, r=${summary.invoice().reservation}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="'Invoice ' + ${inv.number} + ' · Beachside Heaven'">Invoice</title>
+    <link rel="icon" th:href="@{/img/favicon.svg}" type="image/svg+xml">
+    <link rel="stylesheet" th:href="@{/css/print.css}">
+</head>
+<body>
+<div class="toolbar no-print">
+    <button type="button" onclick="window.print()">Print</button>
+    <button type="button" onclick="window.close()">Close</button>
+</div>
+<main class="sheet">
+    <header class="sheet-head">
+        <div class="brand">
+            <img th:src="@{/img/favicon.svg}" alt="" width="40" height="40">
+            <div><strong>Beachside Heaven</strong><span>Guest house</span></div>
+        </div>
+        <div class="doc-title">
+            <h1>Invoice</h1>
+            <p th:text="${inv.number}">INV</p>
+        </div>
+    </header>
+
+    <section class="meta">
+        <div>
+            <h2>Billed to</h2>
+            <p><strong th:text="${r.guest.name}">Guest</strong></p>
+            <p th:if="${r.guest.contactNumber != null}" th:text="${r.guest.contactNumber}">phone</p>
+            <p th:if="${r.guest.email != null}" th:text="${r.guest.email}">email</p>
+            <p th:if="${r.guest.idOrPassport != null}" th:text="'ID: ' + ${r.guest.idOrPassport}">ID</p>
+        </div>
+        <div>
+            <h2>Details</h2>
+            <p>Date: <span th:text="${@fmt.date(inv.generatedDate)}">date</span></p>
+            <p>Booking: <span th:text="${r.reference}">BH</span></p>
+            <p>Status: <strong th:text="${summary.state()}">Unpaid</strong></p>
+        </div>
+    </section>
+
+    <table class="lines">
+        <thead><tr><th>Description</th><th class="num">Nights</th><th class="num">Rate</th><th class="num">Amount</th></tr></thead>
+        <tbody>
+        <tr>
+            <td>
+                Room <span th:text="${r.room.roomNumber}">1</span> - <span th:text="${r.room.type}">Double</span><br>
+                <small th:text="${@fmt.longDate(r.checkInDate)} + ' to ' + ${@fmt.longDate(r.checkOutDate)}">dates</small>
+            </td>
+            <td class="num" th:text="${r.nights}">1</td>
+            <td class="num" th:text="${@fmt.lkr(r.room.price)}">LKR</td>
+            <td class="num" th:text="${@fmt.lkr(summary.total())}">LKR</td>
+        </tr>
+        </tbody>
+        <tfoot>
+        <tr><td colspan="3">Total</td><td class="num" th:text="${@fmt.lkr(summary.total())}">LKR</td></tr>
+        <tr><td colspan="3">Paid</td><td class="num" th:text="${@fmt.lkr(summary.paid())}">LKR</td></tr>
+        <tr class="grand"><td colspan="3">Balance due</td><td class="num" th:text="${@fmt.lkr(summary.balance())}">LKR</td></tr>
+        </tfoot>
+    </table>
+
+    <section th:unless="${payments.isEmpty()}">
+        <h2>Payments received</h2>
+        <table class="lines compact">
+            <thead><tr><th>Receipt</th><th>Date</th><th>Method</th><th class="num">Amount</th></tr></thead>
+            <tbody>
+            <tr th:each="p : ${payments}">
+                <td th:text="${p.receiptNumber}">RC</td>
+                <td th:text="${@fmt.date(p.paymentDate)}">date</td>
+                <td th:text="${#strings.capitalize(#strings.toLowerCase(p.method.name()))}">Cash</td>
+                <td class="num" th:text="${@fmt.lkr(p.amount)}">LKR</td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <footer class="sheet-foot">Thank you for staying with us.</footer>
+</main>
+</body>
+</html>

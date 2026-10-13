@@ -1,0 +1,18 @@
+<!-- Live price + availability summary in the staff "New reservation" panel. -->
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="quote" class="quote">
+    <p th:if="${quote == null}" class="muted">Choose a room to see the price.</p>
+    <th:block th:if="${quote != null}">
+        <div class="quote-line" th:if="${quote.hasDates()}">
+            <span th:text="${@fmt.plural(quote.nights(), 'night', 'nights')} + ' × ' + ${@fmt.lkr(quote.nightlyRate())}">1 night × LKR 0</span>
+            <strong th:text="${@fmt.lkr(quote.total())}">LKR 0</strong>
+        </div>
+        <p th:if="${quote.ok()}" class="quote-ok">
+            <svg th:replace="~{fragments/ui :: icon('i-check-circle')}"></svg>
+            <span th:text="'Room ' + ${quote.room().roomNumber} + ' is free for these dates (sleeps ' + ${quote.room().capacity} + ').'">Room is free</span>
+        </p>
+        <p th:unless="${quote.ok()}" class="quote-problem">
+            <svg th:replace="~{fragments/ui :: icon('i-alert')}"></svg>
+            <span th:text="${quote.problem()}">Problem</span>
+        </p>
+    </th:block>
+</div>

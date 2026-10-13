@@ -1,0 +1,77 @@
+<!-- Slide-over: an invoice, its payments, and the "record payment" form (FR19-23). -->
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="drawer" class="drawer-inner"
+     th:with="inv=${summary.invoice()}, r=${summary.invoice().reservation}">
+    <header class="drawer-head">
+        <div>
+            <p class="eyebrow">Invoice <span th:text="${inv.number}">INV</span> · <span th:text="${@fmt.date(inv.generatedDate)}">date</span></p>
+            <h2 th:text="${r.guest.name}">Guest</h2>
+            <span class="badge" th:classappend="'badge-' + ${summary.tone()}" th:text="${summary.state()}">Unpaid</span>
+        </div>
+        <button type="button" class="icon-btn" data-drawer-close aria-label="Close">
+            <svg th:replace="~{fragments/ui :: icon('i-x')}"></svg>
+        </button>
+    </header>
+
+    <div class="drawer-scroll">
+        <div class="bill">
+            <div class="bill-line">
+                <span>
+                    Room <span th:text="${r.room.roomNumber}">1</span> (<span th:text="${r.room.type}">Double</span>)<br>
+                    <small class="muted" th:text="${@fmt.date(r.checkInDate)} + ' → ' + ${@fmt.date(r.checkOutDate)} + ' · ' + ${@fmt.plural(r.nights, 'night', 'nights')} + ' × ' + ${@fmt.lkr(r.room.price)}">dates</small>
+                </span>
+                <strong th:text="${@fmt.lkr(summary.total())}">LKR</strong>
+            </div>
+            <div class="bill-line"><span>Paid</span><span th:text="${@fmt.lkr(summary.paid())}">LKR</span></div>
+            <div class="bill-line bill-total"><span>Balance due</span><strong th:text="${@fmt.lkr(summary.balance())}">LKR</strong></div>
+        </div>
+
+        <section class="drawer-section action-card" th:unless="${summary.settled()}">
+            <h3>Record payment</h3>
+            <form class="stack" th:hx-post="@{/web/invoices/{id}/payments(id=${inv.id})}" hx-target="#drawer-body">
+                <label class="field"><span>Amount (LKR)</span>
+                    <input type="number" name="amount" th:value="${summary.balance()}" min="0.01" step="0.01"
+                           th:max="${summary.balance()}" required data-autofocus>
+                </label>
+                <div class="field"><span>Method</span>
+                    <div class="segmented segmented-lg">
+                        <label th:each="m, st : ${methods}">
+                            <input type="radio" name="method" th:value="${m.name()}" th:checked="${st.first}" required>
+                            <span th:text="${#strings.capitalize(#strings.toLowerCase(m.name()))}">Cash</span>
+                        </label>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <svg th:replace="~{fragments/ui :: icon('i-wallet')}"></svg> Record payment
+                </button>
+            </form>
+        </section>
+        <p th:if="${summary.settled()}" class="quote-ok">
+            <svg th:replace="~{fragments/ui :: icon('i-check-circle')}"></svg> Paid in full.
+        </p>
+
+        <section class="drawer-section">
+            <h3>Payments</h3>
+            <p th:if="${payments.isEmpty()}" class="muted">No payments yet.</p>
+            <ul class="list" th:unless="${payments.isEmpty()}">
+                <li class="list-row" th:each="p : ${payments}">
+                    <div class="list-main">
+                        <strong th:text="${@fmt.lkr(p.amount)}">LKR</strong>
+                        <span class="muted small"
+                              th:text="${p.receiptNumber} + ' · ' + ${@fmt.date(p.paymentDate)} + ' · ' + ${#strings.capitalize(#strings.toLowerCase(p.method.name()))} + (${p.receivedBy != null} ? ' · by ' + ${p.receivedBy} : '')">RC</span>
+                    </div>
+                    <a class="btn btn-xs" th:href="@{/web/payments/{id}/receipt(id=${p.id})}" target="_blank" rel="noopener">
+                        <svg th:replace="~{fragments/ui :: icon('i-printer')}"></svg> Receipt
+                    </a>
+                </li>
+            </ul>
+        </section>
+    </div>
+
+    <footer class="drawer-foot">
+        <a class="btn" th:href="@{/web/invoices/{id}/print(id=${inv.id})}" target="_blank" rel="noopener">
+            <svg th:replace="~{fragments/ui :: icon('i-printer')}"></svg> Print invoice
+        </a>
+        <span class="spacer"></span>
+        <button type="button" class="btn" data-drawer-close>Close</button>
+    </footer>
+</div>

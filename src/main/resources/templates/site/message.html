@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{site/layout :: layout(title=${title}, content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <div class="message-page">
+        <div class="message-card">
+            <h1 th:text="${title}">Title</h1>
+            <p th:text="${message}">Message</p>
+            <div class="message-actions">
+                <a th:href="@{/rooms}" class="btn btn-primary">See rooms</a>
+                <a th:href="@{/}" class="btn btn-ghost">Home</a>
+            </div>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{staff/layout :: layout(title='Reports', section='REPORTS', content=~{::content})}">
+<body>
+<!-- FR26 occupancy · FR27 income · FR28 reservations · FR29 daily transactions -->
+<div th:fragment="content" class="page page-scroll report-page">
+
+    <form class="toolbar no-print" th:action="@{/web/reports}" method="get">
+        <label class="field-inline"><span>From</span><input type="date" name="from" th:value="${from}" required></label>
+        <label class="field-inline"><span>To</span><input type="date" name="to" th:value="${to}" required></label>
+        <button type="submit" class="btn btn-primary btn-sm">Run report</button>
+        <div class="btn-group">
+            <a class="btn btn-sm" th:href="@{/web/reports(from=${today.minusDays(6)},to=${today})}">Last 7 days</a>
+            <a class="btn btn-sm" th:href="@{/web/reports(from=${today.withDayOfMonth(1)},to=${today})}">This month</a>
+            <a class="btn btn-sm" th:href="@{/web/reports(from=${today.minusMonths(1).withDayOfMonth(1)},to=${today.withDayOfMonth(1).minusDays(1)})}">Last month</a>
+        </div>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-sm" onclick="window.print()">
+            <svg th:replace="~{fragments/ui :: icon('i-printer')}"></svg> Print
+        </button>
+    </form>
+
+    <p th:if="${errorMessage}" class="form-error" th:text="${errorMessage}">Error</p>
+
+    <th:block th:if="${report != null}" th:with="rep=${report}">
+        <h2 class="page-heading" th:text="${@fmt.date(rep.from())} + ' – ' + ${@fmt.date(rep.to())}">Period</h2>
+
+        <section class="kpis">
+            <div class="kpi">
+                <span class="kpi-label">Occupancy</span>
+                <strong th:text="${@fmt.percent(rep.occupancyPercent())}">0%</strong>
+                <span class="kpi-sub" th:text="${rep.nightsSold()} + ' of ' + ${rep.nightsAvailable()} + ' room-nights'">nights</span>
+            </div>
+            <div class="kpi">
+                <span class="kpi-label">Room revenue</span>
+                <strong th:text="${@fmt.lkr(rep.roomRevenue())}">LKR</strong>
+                <span class="kpi-sub">value of nights stayed or booked</span>
+            </div>
+            <div class="kpi">
+                <span class="kpi-label">Average nightly rate</span>
+                <strong th:text="${@fmt.lkr(rep.averageDailyRate())}">LKR</strong>
+                <span class="kpi-sub">per occupied room-night</span>
+            </div>
+            <div class="kpi">
+                <span class="kpi-label">Takings</span>
+                <strong th:text="${@fmt.lkr(rep.takings())}">LKR</strong>
+                <span class="kpi-sub" th:text="'Cash ' + ${@fmt.lkr(rep.cashTakings())} + ' · Card ' + ${@fmt.lkr(rep.cardTakings())}">cash/card</span>
+            </div>
+            <div class="kpi">
+                <span class="kpi-label">Invoiced</span>
+                <strong th:text="${@fmt.lkr(rep.invoiced())}">LKR</strong>
+                <span class="kpi-sub">invoices raised in period</span>
+            </div>
+        </section>
+
+        <!-- FR29: daily transactions -->
+        <section class="card">
+            <header class="card-head"><h3>Day by day</h3></header>
+            <div class="table-scroll">
+                <table class="table table-compact">
+                    <thead>
+                    <tr><th>Date</th><th class="num">Rooms occupied</th><th class="num">Occupancy</th><th class="num">Arrivals</th>
+                        <th class="num">Departures</th><th class="num">Payments</th><th class="num">Cash</th><th class="num">Card</th><th class="num">Takings</th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="d : ${rep.days()}" th:classappend="${d.date.equals(today)} ? 'is-today'">
+                        <td class="nowrap" th:text="${@fmt.dayName(d.date)} + ' ' + ${@fmt.shortDate(d.date)}">date</td>
+                        <td class="num" th:text="${d.occupiedRooms}">0</td>
+                        <td class="num" th:text="${rep.roomCount() == 0} ? '—' : ${@fmt.percent(d.occupiedRooms * 100.0 / rep.roomCount())}">0%</td>
+                        <td class="num" th:text="${d.arrivals}">0</td>
+                        <td class="num" th:text="${d.departures}">0</td>
+                        <td class="num" th:text="${d.payments}">0</td>
+                        <td class="num" th:text="${@fmt.number(d.cash)}">0</td>
+                        <td class="num" th:text="${@fmt.number(d.card)}">0</td>
+                        <td class="num"><strong th:text="${@fmt.number(d.takings)}">0</strong></td>
+                    </tr>
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <td>Total</td>
+                        <td class="num" th:text="${rep.nightsSold()}">0</td>
+                        <td class="num" th:text="${@fmt.percent(rep.occupancyPercent())}">0%</td>
+                        <td colspan="3"></td>
+                        <td class="num" th:text="${@fmt.number(rep.cashTakings())}">0</td>
+                        <td class="num" th:text="${@fmt.number(rep.cardTakings())}">0</td>
+                        <td class="num" th:text="${@fmt.lkr(rep.takings())}">0</td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </section>
+
+        <!-- FR28: reservations report -->
+        <div class="report-grid">
+            <section class="card">
+                <header class="card-head"><h3>Reservations arriving in period</h3><span class="count" th:text="${rep.reservations().size()}">0</span></header>
+                <div class="mini-stats">
+                    <div th:each="e : ${rep.reservationsByStatus()}">
+                        <span class="muted small" th:text="${#strings.capitalize(#strings.toLowerCase(e.key.name()))}">Active</span>
+                        <strong th:text="${e.value}">0</strong>
+                    </div>
+                    <div th:each="e : ${rep.reservationsByChannel()}">
+                        <span class="muted small" th:text="${e.key.label}">Online</span>
+                        <strong th:text="${e.value}">0</strong>
+                    </div>
+                </div>
+                <div class="table-scroll">
+                    <table class="table table-compact">
+                        <thead><tr><th>Ref</th><th>Guest</th><th>Room</th><th>Check-in</th><th class="num">Nights</th><th>Channel</th><th>Status</th></tr></thead>
+                        <tbody>
+                        <tr th:if="${rep.reservations().isEmpty()}"><td colspan="7" class="empty">No arrivals in this period.</td></tr>
+                        <tr th:each="r : ${rep.reservations()}">
+                            <td class="mono" th:text="${r.reference}">BH</td>
+                            <td th:text="${r.guest.name}">Guest</td>
+                            <td th:text="${r.room.roomNumber}">101</td>
+                            <td class="nowrap" th:text="${@fmt.shortDate(r.checkInDate)}">date</td>
+                            <td class="num" th:text="${r.nights}">1</td>
+                            <td th:text="${r.bookingChannel.label}">Online</td>
+                            <td><span th:replace="~{fragments/ui :: stage(${r})}"></span></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- FR27/FR29: every payment in the period -->
+            <section class="card">
+                <header class="card-head"><h3>Transactions</h3><span class="count" th:text="${rep.payments().size()}">0</span></header>
+                <div class="table-scroll">
+                    <table class="table table-compact">
+                        <thead><tr><th>Date</th><th>Receipt</th><th>Guest</th><th>Method</th><th>By</th><th class="num">Amount</th></tr></thead>
+                        <tbody>
+                        <tr th:if="${rep.payments().isEmpty()}"><td colspan="6" class="empty">No payments in this period.</td></tr>
+                        <tr th:each="p : ${rep.payments()}">
+                            <td class="nowrap" th:text="${@fmt.shortDate(p.paymentDate)}">date</td>
+                            <td class="mono" th:text="${p.receiptNumber}">RC</td>
+                            <td th:text="${p.invoice.reservation.guest.name}">Guest</td>
+                            <td th:text="${#strings.capitalize(#strings.toLowerCase(p.method.name()))}">Cash</td>
+                            <td th:text="${p.receivedBy} ?: '—'">staff</td>
+                            <td class="num" th:text="${@fmt.lkr(p.amount)}">LKR</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </th:block>
+</div>
+</body>
+</html>

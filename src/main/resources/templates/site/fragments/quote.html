@@ -1,0 +1,20 @@
+<!-- Booking summary on the public site: nights × price = total, plus whether the dates work. -->
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="quote" class="quote">
+    <th:block th:if="${quote.hasDates()}">
+        <div class="quote-row">
+            <span th:text="${@fmt.lkr(quote.nightlyRate())} + ' × ' + ${@fmt.plural(quote.nights(), 'night', 'nights')}">LKR × nights</span>
+            <span th:text="${@fmt.lkr(quote.total())}">LKR</span>
+        </div>
+        <div class="quote-row quote-total">
+            <span>Total</span>
+            <strong th:text="${@fmt.lkr(quote.total())}">LKR</strong>
+        </div>
+        <p class="quote-note">Pay at the property - nothing is charged online.</p>
+    </th:block>
+    <p th:if="${quote.ok()}" class="quote-ok">
+        <svg th:replace="~{fragments/ui :: icon('i-check-circle')}"></svg> Available for your dates
+    </p>
+    <p th:unless="${quote.ok()}" class="quote-problem" role="status">
+        <svg th:replace="~{fragments/ui :: icon('i-alert')}"></svg> <span th:text="${quote.problem()}">Problem</span>
+    </p>
+</div>

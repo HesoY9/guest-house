@@ -17,7 +17,8 @@ public class GuestAccountResolver {
     // idOrPassport and contactNumber are intentionally left blank here - DR3 only requires
     // an ID at check-in, and contact number gets collected on the booking form itself.
     public Guest resolveGuest(OAuth2User oauth2User) {
-        String email = oauth2User.getAttribute("email");
+        String rawEmail = oauth2User.getAttribute("email");
+        String email = rawEmail != null ? rawEmail.trim().toLowerCase() : null;
         String name = oauth2User.getAttribute("name");
 
         return guestRepository.findByEmail(email)

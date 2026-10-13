@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{staff/layout :: layout(title='Reservations', section='RESERVATIONS', content=~{::content})}">
+<body>
+<div th:fragment="content" class="page page-fill">
+
+    <!-- Filters update only the table (hx-select) and the address bar (hx-push-url), no full reload. -->
+    <form class="toolbar" th:hx-get="@{/web/reservations}" hx-target="#res-list" hx-select="#res-list"
+          hx-swap="outerHTML" hx-push-url="true"
+          hx-trigger="input changed delay:300ms from:find input[type=search], change, submit">
+        <div class="segmented" role="radiogroup" aria-label="Status">
+            <label th:each="opt : ${ {'active','completed','cancelled','all'} }" th:classappend="${status == opt} ? 'on'">
+                <input type="radio" name="status" th:value="${opt}" th:checked="${status == opt}">
+                <span th:text="${opt == 'active'} ? 'Current' : ${#strings.capitalize(opt)}">Current</span>
+            </label>
+        </div>
+        <label class="search">
+            <svg th:replace="~{fragments/ui :: icon('i-search')}"></svg>
+            <input type="search" name="q" th:value="${q}" placeholder="Guest, BH-number or room" aria-label="Search reservations">
+        </label>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-primary" th:hx-get="@{/web/reservations/new}" hx-target="#drawer-body">
+            <svg th:replace="~{fragments/ui :: icon('i-plus')}"></svg> New reservation
+        </button>
+    </form>
+
+    <!-- Re-fetches itself (keeping the current filters) whenever an action changes data. -->
+    <div id="res-list" class="panel table-panel"
+         th:hx-get="${currentUrl}" hx-trigger="dataChanged from:body" hx-select="#res-list" hx-swap="outerHTML">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Ref</th><th>Guest</th><th>Room</th><th>Check-in</th><th>Check-out</th>
+                <th class="num">Nights</th><th class="num">Guests</th><th>Channel</th>
+                <th class="num">Total</th><th>Status</th><th class="actions-col"><span class="sr-only">Actions</span></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${reservations.isEmpty()}"><td colspan="11" class="empty">No reservations match.</td></tr>
+            <tr th:each="r : ${reservations}" class="row-link" th:attr="data-drawer-url=@{/web/reservations/{id}(id=${r.id})}">
+                <td class="mono" th:text="${r.reference}">BH-000001</td>
+                <td><strong th:text="${r.guest.name}">Guest</strong></td>
+                <td th:text="${r.room.roomNumber}">101</td>
+                <td th:text="${@fmt.date(r.checkInDate)}">1 Jan</td>
+                <td th:text="${@fmt.date(r.checkOutDate)}">2 Jan</td>
+                <td class="num" th:text="${r.nights}">1</td>
+                <td class="num" th:text="${r.numberOfGuests}">1</td>
+                <td th:text="${r.bookingChannel.label}">Online</td>
+                <td class="num" th:text="${@fmt.lkr(r.estimatedTotal)}">LKR 0</td>
+                <td><span th:replace="~{fragments/ui :: stage(${r})}"></span></td>
+                <td class="actions-col">
+                    <th:block th:switch="${r.stage.name()}">
+                        <th:block th:case="'ARRIVING'">
+                            <button th:if="${r.guest.idOrPassport != null}" type="button" class="btn btn-xs btn-primary"
+                                    th:hx-put="@{/web/reservations/{id}/checkin(id=${r.id})}">Check in</button>
+                            <button th:unless="${r.guest.idOrPassport != null}" type="button" class="btn btn-xs btn-primary"
+                                    th:hx-get="@{/web/reservations/{id}(id=${r.id})}" hx-target="#drawer-body">Check in…</button>
+                        </th:block>
+                        <button th:case="'IN_HOUSE'" type="button" class="btn btn-xs"
+                                th:hx-put="@{/web/reservations/{id}/checkout(id=${r.id})}"
+                                th:with="until=${@fmt.date(r.checkOutDate)}"
+                                th:hx-confirm="'Check out ' + ${r.guest.name} + ' now? Their stay was booked until ' + ${until} + '.'">Check out</button>
+                        <button th:case="'DUE_OUT'" type="button" class="btn btn-xs btn-primary"
+                                th:hx-put="@{/web/reservations/{id}/checkout(id=${r.id})}"
+                                th:hx-confirm="'Check out ' + ${r.guest.name} + '?'">Check out</button>
+                    </th:block>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

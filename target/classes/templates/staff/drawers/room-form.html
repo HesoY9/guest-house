@@ -1,0 +1,98 @@
+<!-- Slide-over: add or edit a room (FR1, FR2) incl. capacity, amenities and photos.
+     'room' is null while adding; after the first save the same panel shows the photo manager. -->
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="drawer" class="drawer-inner">
+    <header class="drawer-head">
+        <div>
+            <p class="eyebrow">Rooms</p>
+            <h2 th:text="${room == null} ? 'Add room' : 'Room ' + ${room.roomNumber}">Add room</h2>
+        </div>
+        <button type="button" class="icon-btn" data-drawer-close aria-label="Close">
+            <svg th:replace="~{fragments/ui :: icon('i-x')}"></svg>
+        </button>
+    </header>
+
+    <div class="drawer-scroll">
+        <form id="room-form" class="stack"
+              th:hx-post="${room == null} ? @{/web/rooms} : @{/web/rooms/{id}(id=${room.id})}" hx-target="#drawer-body">
+            <p th:if="${errorMessage}" class="form-error" th:text="${errorMessage}">Error</p>
+            <div class="field-row">
+                <label class="field"><span>Room number</span>
+                    <input type="text" name="roomNumber" th:value="${form.roomNumber}" required maxlength="10" data-autofocus autocomplete="off">
+                </label>
+                <label class="field"><span>Type</span>
+                    <input type="text" name="type" th:value="${form.type}" list="room-types" required maxlength="30" autocomplete="off" placeholder="e.g. Double">
+                    <datalist id="room-types"><option th:each="t : ${roomTypes}" th:value="${t}"></option></datalist>
+                </label>
+            </div>
+            <div class="field-row">
+                <label class="field"><span>Price per night (LKR)</span>
+                    <input type="number" name="price" th:value="${form.price}" min="1" step="0.01" required>
+                </label>
+                <label class="field"><span>Sleeps (max guests)</span>
+                    <input type="number" name="capacity" th:value="${form.capacity}" min="1" max="20" required>
+                </label>
+            </div>
+            <label class="field"><span>Status</span>
+                <select name="status" required>
+                    <option th:each="s : ${statuses}" th:value="${s.name()}" th:selected="${form.status == s}" th:text="${s.label}">Ready</option>
+                </select>
+            </label>
+            <label class="field"><span>Description <em>(shown on the website)</em></span>
+                <textarea name="description" rows="4" maxlength="1000" th:text="${form.description}"
+                          placeholder="What makes this room special? Views, bed size, space…"></textarea>
+            </label>
+            <fieldset class="fieldset">
+                <legend>Amenities</legend>
+                <div class="check-grid">
+                    <label th:each="a : ${amenities}" class="check">
+                        <input type="checkbox" name="amenities" th:value="${a.name()}" th:checked="${form.amenities.contains(a)}">
+                        <span th:text="${a.label}">Wi-Fi</span>
+                    </label>
+                </div>
+            </fieldset>
+        </form>
+
+        <th:block th:if="${room != null}"><section th:replace="~{:: photos}"></section></th:block>
+        <p th:if="${room == null}" class="muted">You can add photos once the room is saved.</p>
+    </div>
+
+    <footer class="drawer-foot">
+        <button type="button" class="btn" data-drawer-close th:text="${room == null} ? 'Cancel' : 'Close'">Cancel</button>
+        <button type="submit" form="room-form" class="btn btn-primary" th:text="${room == null} ? 'Add room' : 'Save changes'">Save</button>
+    </footer>
+</div>
+
+<!-- Photo manager - also returned on its own after each upload / delete / reorder. -->
+<section th:fragment="photos" id="room-photos" class="drawer-section photos-section">
+    <h3>Photos <span class="muted small" th:text="'(' + ${room.photos.size()} + ')'">(0)</span></h3>
+    <p class="muted small">The first photo is the cover shown on the website. Good, bright photos make the biggest difference to bookings.</p>
+    <div class="photo-grid">
+        <figure th:each="p, st : ${room.photos}" class="photo-tile" th:classappend="${st.first} ? 'is-cover'">
+            <img th:src="${p.src}" alt="" loading="lazy">
+            <span th:if="${st.first}" class="cover-badge">Cover</span>
+            <figcaption>
+                <button th:unless="${st.first}" type="button" class="btn btn-xs"
+                        th:hx-post="@{/web/rooms/{id}/photos/{pid}/cover(id=${room.id},pid=${p.id})}"
+                        hx-target="#room-photos" hx-swap="outerHTML">Make cover</button>
+                <button type="button" class="btn btn-xs btn-danger-ghost" title="Delete photo"
+                        th:hx-delete="@{/web/rooms/{id}/photos/{pid}(id=${room.id},pid=${p.id})}"
+                        hx-target="#room-photos" hx-swap="outerHTML" hx-confirm="Delete this photo?">
+                    <svg th:replace="~{fragments/ui :: icon('i-trash')}"></svg>
+                </button>
+            </figcaption>
+        </figure>
+    </div>
+    <form class="upload-form" th:hx-post="@{/web/rooms/{id}/photos(id=${room.id})}" hx-encoding="multipart/form-data"
+          hx-target="#room-photos" hx-swap="outerHTML">
+        <label class="upload-drop">
+            <svg th:replace="~{fragments/ui :: icon('i-image')}"></svg>
+            <span><strong>Upload a photo</strong> JPG, PNG or WebP, up to 5 MB</span>
+            <input type="file" name="file" accept="image/jpeg,image/png,image/webp,image/gif" data-autosubmit>
+        </label>
+        <div class="url-row">
+            <input type="url" name="url" placeholder="…or paste an image link (https://…)" aria-label="Image link">
+            <button type="submit" class="btn btn-sm">Add</button>
+        </div>
+        <progress class="upload-progress" value="0" max="100" hidden></progress>
+    </form>
+</section>

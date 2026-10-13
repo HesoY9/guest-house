@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Staff login · Beachside Heaven</title>
+    <link rel="icon" th:href="@{/img/favicon.svg}" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/staff.css}">
+</head>
+<body class="login-body">
+<div class="login-shell">
+    <section class="login-art" aria-hidden="true">
+        <div class="login-art-inner">
+            <span class="brand-mark brand-mark-lg"><svg th:replace="~{fragments/ui :: icon('i-waves')}"></svg></span>
+            <h2>Beachside Heaven</h2>
+            <p>Front desk, housekeeping and reports - all in one place.</p>
+        </div>
+    </section>
+    <main class="login-panel">
+        <div class="login-card">
+            <h1>Staff login</h1>
+            <p class="muted">Sign in with the account your manager gave you.</p>
+
+            <p th:if="${infoMessage}" class="form-info" th:text="${infoMessage}">Info</p>
+            <p th:if="${errorMessage}" class="form-error" role="alert" th:text="${errorMessage}">Error</p>
+
+            <!-- th:action makes Thymeleaf add the hidden CSRF field automatically -->
+            <form th:action="@{/web/login}" method="post" class="stack">
+                <label class="field"><span>Username</span>
+                    <input type="text" name="username" th:value="${username}" required autocomplete="username" autofocus>
+                </label>
+                <label class="field"><span>Password</span>
+                    <input type="password" name="password" required autocomplete="current-password">
+                </label>
+                <button type="submit" class="btn btn-primary btn-block">Log in</button>
+            </form>
+            <a class="text-link small" th:href="@{/}">← Back to the guest website</a>
+        </div>
+    </main>
+</div>
+</body>
+</html>

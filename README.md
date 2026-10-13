@@ -1,9 +1,42 @@
 # guest-house-management-system
 
+Beachside Heaven - guest house booking website (for guests) and property-management portal (for staff).
+
 ## Table of Contents
+* [Running the app](#running-the-app)
 * [Go to GitHub Basics](#github-basics)
 * [Go to Basic Entity Types](#basic-entity-types)
 * [Go to Requirements](#requirements)
+
+## Running the app
+
+### Secrets live in environment variables, never in the code
+`application.properties` is committed to GitHub, so it contains **no passwords**. Instead:
+
+1. Copy `.env.example` to `.env` (same folder as `pom.xml`). `.env` is git-ignored.
+2. Fill in `DB_PASSWORD`, `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (and optionally the mail settings).
+3. Run the app as usual from IntelliJ or with `mvn spring-boot:run`. Spring loads `.env` automatically.
+
+On a server, set the same names as real environment variables instead of using a `.env` file.
+The first time the app starts with an empty `users` table it creates `admin` with the password in
+`ADMIN_INITIAL_PASSWORD` (or prints a random one in the log).
+
+### Try it without MySQL (demo data)
+```bash
+mvn test-compile
+mvn spring-boot:run -Dspring-boot.run.useTestClasspath=true -Dspring-boot.run.profiles=local-h2
+```
+Uses an in-memory database filled with demo rooms, guests and bookings (see
+`src/test/resources/application-local-h2.properties` for the demo logins). Nothing is saved.
+If your IDE/Maven doesn't pick up the test classpath, run `GuesthouseApplication` from IntelliJ with the
+`local-h2` profile and "include test classpath" ticked.
+
+### Where things are
+| Address | What |
+|---|---|
+| `/` | Public booking site (search, room pages, booking, My bookings) |
+| `/web` | Staff portal (log in at `/web/login`) - each role sees its own menu |
+| `/api/**` | REST API - **off** unless `REST_API_ENABLED=true` (local testing only) |
 
 ## GitHub basics
 ### step 01

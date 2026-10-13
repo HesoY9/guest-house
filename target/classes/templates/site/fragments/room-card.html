@@ -1,0 +1,31 @@
+<!-- One room in a results grid. 'search' (optional) carries the chosen dates/guests into the room link. -->
+<article xmlns:th="http://www.thymeleaf.org" th:fragment="card(room, search, nights)" class="room-card"
+         th:with="link=${search != null and search.hasDates()} ? @{/rooms/{id}(id=${room.id},checkIn=${search.checkIn},checkOut=${search.checkOut},guests=${search.guests ?: 1})} : @{/rooms/{id}(id=${room.id})}">
+    <a th:href="${link}" class="room-card-media" tabindex="-1" aria-hidden="true">
+        <img th:if="${room.coverPhotoUrl != null}" th:src="${room.coverPhotoSrc}" alt="" loading="lazy">
+        <div th:unless="${room.coverPhotoUrl != null}" class="photo-placeholder">
+            <svg th:replace="~{fragments/ui :: icon('i-waves')}"></svg>
+            <span th:text="${room.type}">Room</span>
+        </div>
+        <span th:if="${room.photos.size() > 1}" class="photo-count" th:text="${room.photos.size()} + ' photos'">3 photos</span>
+    </a>
+    <div class="room-card-body">
+        <div class="room-card-title">
+            <h3><a th:href="${link}" th:text="${room.type} + ' Room'">Double Room</a></h3>
+            <span class="muted" th:text="'Room ' + ${room.roomNumber}">Room 101</span>
+        </div>
+        <p class="room-facts">
+            <span><svg th:replace="~{fragments/ui :: icon('i-users')}"></svg> Sleeps <span th:text="${room.capacity}">2</span></span>
+            <span th:each="a, st : ${room.sortedAmenities}" th:if="${st.index < 3}" th:text="${a.label}">Wi-Fi</span>
+        </p>
+        <p class="room-card-desc" th:if="${room.description != null}" th:text="${room.description}">Description</p>
+        <div class="room-card-foot">
+            <div class="price">
+                <strong th:text="${@fmt.lkr(room.price)}">LKR 0</strong> <span>/ night</span>
+                <small th:if="${nights != null and nights > 0}"
+                       th:text="${@fmt.plural(nights, 'night', 'nights')} + ' · ' + ${@fmt.lkr(room.price * nights)} + ' total'">total</small>
+            </div>
+            <a th:href="${link}" class="btn btn-primary btn-sm">View room</a>
+        </div>
+    </div>
+</article>

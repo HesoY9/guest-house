@@ -1,0 +1,15 @@
+<!-- Small reusable bits shared by the staff portal and the public site. -->
+<th:block xmlns:th="http://www.thymeleaf.org">
+
+    <!-- ~{fragments/ui :: icon('i-bed')} -> an inline icon from /img/icons.svg -->
+    <svg th:fragment="icon(name)" class="icon" aria-hidden="true" focusable="false"><use th:href="@{/img/icons.svg} + '#' + ${name}"></use></svg>
+
+    <!-- Reservation stage badge: Upcoming / Arriving / In house / Due out / No-show / Completed / Cancelled -->
+    <span th:fragment="stage(r)" class="badge" th:classappend="'badge-' + ${r.stage.tone}" th:text="${r.stage.label}">Upcoming</span>
+
+    <!-- Room housekeeping status badge -->
+    <span th:fragment="roomStatus(status)" class="badge"
+          th:classappend="${status.name() == 'AVAILABLE'} ? 'badge-success' : (${status.name() == 'CLEANING_REQUIRED'} ? 'badge-warning' : (${status.name() == 'OCCUPIED'} ? 'badge-primary' : 'badge-info'))"
+          th:text="${status.label}">Ready</span>
+
+</th:block>

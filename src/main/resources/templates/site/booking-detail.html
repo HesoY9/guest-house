@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<!-- Printable booking confirmation for the guest (their own bookings only - see MyBookingsController). -->
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:with="r=${reservation}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="'Booking ' + ${r.reference} + ' · Beachside Heaven'">Booking</title>
+    <link rel="icon" th:href="@{/img/favicon.svg}" type="image/svg+xml">
+    <link rel="stylesheet" th:href="@{/css/print.css}">
+</head>
+<body>
+<div class="toolbar no-print">
+    <button type="button" onclick="window.print()">Print</button>
+    <a th:href="@{/my-bookings}">Back to my bookings</a>
+</div>
+<main class="sheet">
+    <header class="sheet-head">
+        <div class="brand">
+            <img th:src="@{/img/favicon.svg}" alt="" width="40" height="40">
+            <div><strong>Beachside Heaven</strong><span>Booking confirmation</span></div>
+        </div>
+        <div class="doc-title">
+            <h1 th:text="${r.status.name() == 'CANCELLED'} ? 'Cancelled' : 'Confirmed'">Confirmed</h1>
+            <p th:text="${r.reference}">BH</p>
+        </div>
+    </header>
+
+    <section class="meta">
+        <div>
+            <h2>Guest</h2>
+            <p><strong th:text="${r.guest.name}">Guest</strong></p>
+            <p th:if="${r.guest.email != null}" th:text="${r.guest.email}">email</p>
+            <p th:if="${r.guest.contactNumber != null}" th:text="${r.guest.contactNumber}">phone</p>
+        </div>
+        <div>
+            <h2>Stay</h2>
+            <p>Check-in: <strong th:text="${@fmt.longDate(r.checkInDate)}">date</strong></p>
+            <p>Check-out: <strong th:text="${@fmt.longDate(r.checkOutDate)}">date</strong></p>
+            <p th:text="${@fmt.plural(r.numberOfGuests, 'guest', 'guests')}">guests</p>
+        </div>
+    </section>
+
+    <table class="lines">
+        <thead><tr><th>Room</th><th class="num">Nights</th><th class="num">Rate</th><th class="num">Amount</th></tr></thead>
+        <tbody>
+        <tr>
+            <td th:text="${r.room.type} + ' Room ' + ${r.room.roomNumber}">Room</td>
+            <td class="num" th:text="${r.nights}">1</td>
+            <td class="num" th:text="${@fmt.lkr(r.room.price)}">LKR</td>
+            <td class="num" th:text="${@fmt.lkr(r.estimatedTotal)}">LKR</td>
+        </tr>
+        </tbody>
+        <tfoot>
+        <tr class="grand"><td colspan="3">Total (pay at the property)</td><td class="num" th:text="${@fmt.lkr(r.estimatedTotal)}">LKR</td></tr>
+        </tfoot>
+    </table>
+
+    <div class="callout">
+        <p><strong>Payment:</strong> pay at the property by cash or card. Nothing has been charged online.</p>
+        <p><strong>Check-in:</strong> please bring your ID or passport.</p>
+        <p><strong>Cancellation:</strong> free online from My bookings, any time before check-in.</p>
+        <p th:if="${r.notes != null}"><strong>Your requests:</strong> <span th:text="${r.notes}">notes</span></p>
+    </div>
+
+    <footer class="sheet-foot">We look forward to welcoming you to Beachside Heaven.</footer>
+</main>
+</body>
+</html>

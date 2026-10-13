@@ -29,6 +29,10 @@ public class Guest {
     @Column(unique = true, length = 150)
     private String email;
 
+    // Free-text staff notes for the guest profile (preferences, VIP, allergies...).
+    @Column(length = 1000)
+    private String notes;
+
     public Guest() {
         // required by JPA
     }
@@ -67,5 +71,13 @@ public class Guest {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 }
